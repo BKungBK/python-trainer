@@ -1,0 +1,56 @@
+# OS Files
+.DS_Store
+Thumbs.db
+db.db
+*.tmp
+*.bak
+
+# Node & Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# SvelteKit & Frontend Build Output
+/build/
+/.svelte-kit/
+/package/
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Tauri Private Signing Keys (Double Safety)
+*.key
+src-tauri/*.key
+src-tauri/tauri-key.key
+
+# Rust / Cargo (Fallback in case of root commands)
+/src-tauri/target/
+/src-tauri/Cargo.lock
+
+# AI Agents & Design Assistant Tools
+*.agents
+*.impeccable
+
+# Generated Output / Scratch Data
+/output/
+*.db
