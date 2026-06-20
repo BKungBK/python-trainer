@@ -57,3 +57,5 @@ src-tauri/tauri-key.key
 
 DESIGN.md
 PRODUCT.md
+seed_supabase.js
+skills-lock.json
