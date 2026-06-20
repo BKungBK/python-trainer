@@ -54,3 +54,6 @@ src-tauri/tauri-key.key
 # Generated Output / Scratch Data
 /output/
 *.db
+
+DESIGN.md
+PRODUCT.md
