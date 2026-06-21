@@ -72,6 +72,42 @@ impl SupabaseClient {
         headers
     }
 
+    async fn fetch_all_paginated<T>(&self, table_name: &str) -> Result<Vec<T>, String>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let mut all_items = Vec::new();
+        let mut offset = 0;
+        let limit = 1000;
+        let headers = self.get_headers();
+
+        loop {
+            let url = format!("{}/rest/v1/{}?select=*&limit={}&offset={}", self.url, table_name, limit, offset);
+            let res = self.client.get(&url)
+                .headers(headers.clone())
+                .send()
+                .await
+                .map_err(|e| format!("Network error fetching paginated {}: {}", table_name, e))?;
+
+            if !res.status().is_success() {
+                return Err(format!("Supabase {} query returned error code: {}", table_name, res.status()));
+            }
+
+            let items: Vec<T> = res.json().await
+                .map_err(|e| format!("Failed to parse response for paginated {}: {}", table_name, e))?;
+
+            let len = items.len();
+            all_items.extend(items);
+
+            if len < limit {
+                break;
+            }
+            offset += limit;
+        }
+
+        Ok(all_items)
+    }
+
     pub async fn pull_and_sync_problems(&self, db: &DbManager) -> Result<(), String> {
         if !self.is_configured() {
             return Err("Supabase is not configured. Run in offline mode or check credentials.".to_string());
@@ -80,21 +116,20 @@ impl SupabaseClient {
         let headers = self.get_headers();
         let client = &self.client;
 
-        let prob_url = format!("{}/rest/v1/problems?select=*", self.url);
-        let pub_tc_url = format!("{}/rest/v1/public_test_cases?select=*", self.url);
-        let priv_tc_url = format!("{}/rest/v1/private_test_cases?select=*", self.url);
         let dc_url = format!("{}/rest/v1/daily_challenges?select=*", self.url);
         let cc_url = format!("{}/rest/v1/category_configs?select=*", self.url);
 
-        let prob_fut = client.get(&prob_url).headers(headers.clone()).send();
-        let pub_tc_fut = client.get(&pub_tc_url).headers(headers.clone()).send();
-        let priv_tc_fut = client.get(&priv_tc_url).headers(headers.clone()).send();
+        // Fetch paginated resources concurrently or sequentially.
+        // To avoid overlapping connections and keep it simple, we can run them concurrently
+        // using tokio::try_join! or join!
+        let problems_fut = self.fetch_all_paginated::<Problem>("problems");
+        let pub_tc_fut = self.fetch_all_paginated::<TestCase>("public_test_cases");
+        let priv_tc_fut = self.fetch_all_paginated::<TestCase>("private_test_cases");
         let dc_fut = client.get(&dc_url).headers(headers.clone()).send();
         let cc_fut = client.get(&cc_url).headers(headers).send();
 
-        // Fetch all resources concurrently
-        let (prob_res, pub_tc_res, priv_tc_res, dc_res, cc_res) = tokio::join!(
-            prob_fut,
+        let (problems_res, public_tcs_res, private_tcs_res, dc_res, cc_res) = tokio::join!(
+            problems_fut,
             pub_tc_fut,
             priv_tc_fut,
             dc_fut,
@@ -102,14 +137,7 @@ impl SupabaseClient {
         );
 
         // 1. Process Problems
-        let prob_res = prob_res.map_err(|e| format!("Network error fetching problems: {}", e))?;
-        if !prob_res.status().is_success() {
-            return Err(format!("Supabase problems returned error code: {}", prob_res.status()));
-        }
-        let problems: Vec<Problem> = prob_res.json().await
-            .map_err(|e| format!("Failed to parse problems: {}", e))?;
-
-        // Batch insert problems
+        let problems = problems_res?;
         db.insert_problems_batch(&problems)
             .map_err(|e| format!("Failed to cache problems: {}", e))?;
 
@@ -124,37 +152,27 @@ impl SupabaseClient {
         }
 
         // 2. Process Public Test Cases
-        if let Ok(pub_res) = pub_tc_res {
-            if pub_res.status().is_success() {
-                let public_tcs_res: Result<Vec<TestCase>, reqwest::Error> = pub_res.json().await;
-                if let Ok(public_tcs) = public_tcs_res {
-                    let _ = db.insert_public_test_cases_batch(&public_tcs);
-                    let fetched_pub_tc_ids: std::collections::HashSet<String> = public_tcs.iter().map(|tc| tc.id.clone()).collect();
-                    if let Ok(local_pub_tcs) = db.get_all_public_test_cases() {
-                        for tc in local_pub_tcs {
-                            if !fetched_pub_tc_ids.contains(&tc.id) {
-                                let _ = db.delete_public_test_case(&tc.id);
-                            }
-                        }
-                    }
+        let public_tcs = public_tcs_res?;
+        db.insert_public_test_cases_batch(&public_tcs)
+            .map_err(|e| format!("Failed to cache public test cases: {}", e))?;
+        let fetched_pub_tc_ids: std::collections::HashSet<String> = public_tcs.iter().map(|tc| tc.id.clone()).collect();
+        if let Ok(local_pub_tcs) = db.get_all_public_test_cases() {
+            for tc in local_pub_tcs {
+                if !fetched_pub_tc_ids.contains(&tc.id) {
+                    let _ = db.delete_public_test_case(&tc.id);
                 }
             }
         }
 
         // 3. Process Private Test Cases
-        if let Ok(priv_res) = priv_tc_res {
-            if priv_res.status().is_success() {
-                let private_tcs_res: Result<Vec<TestCase>, reqwest::Error> = priv_res.json().await;
-                if let Ok(private_tcs) = private_tcs_res {
-                    let _ = db.insert_private_test_cases_batch(&private_tcs);
-                    let fetched_priv_tc_ids: std::collections::HashSet<String> = private_tcs.iter().map(|tc| tc.id.clone()).collect();
-                    if let Ok(local_priv_tcs) = db.get_all_private_test_cases() {
-                        for tc in local_priv_tcs {
-                            if !fetched_priv_tc_ids.contains(&tc.id) {
-                                let _ = db.delete_private_test_case(&tc.id);
-                            }
-                        }
-                    }
+        let private_tcs = private_tcs_res?;
+        db.insert_private_test_cases_batch(&private_tcs)
+            .map_err(|e| format!("Failed to cache private test cases: {}", e))?;
+        let fetched_priv_tc_ids: std::collections::HashSet<String> = private_tcs.iter().map(|tc| tc.id.clone()).collect();
+        if let Ok(local_priv_tcs) = db.get_all_private_test_cases() {
+            for tc in local_priv_tcs {
+                if !fetched_priv_tc_ids.contains(&tc.id) {
+                    let _ = db.delete_private_test_case(&tc.id);
                 }
             }
         }
@@ -167,11 +185,11 @@ impl SupabaseClient {
                 problem_ids: serde_json::Value,
             }
             if dc_res.status().is_success() {
-                if let Ok(rows) = dc_res.json::<Vec<DailyChallengeRow>>().await {
-                    for row in rows {
-                        if let Ok(prob_ids) = serde_json::from_value::<Vec<String>>(row.problem_ids) {
-                            let _ = db.save_daily_challenge(&row.date, &prob_ids);
-                        }
+                let rows: Vec<DailyChallengeRow> = dc_res.json().await
+                    .map_err(|e| format!("Failed to parse daily challenges: {}", e))?;
+                for row in rows {
+                    if let Ok(prob_ids) = serde_json::from_value::<Vec<String>>(row.problem_ids) {
+                        let _ = db.save_daily_challenge(&row.date, &prob_ids);
                     }
                 }
             }
