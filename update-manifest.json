@@ -1,0 +1,11 @@
+{
+    "version": "1.0.0",
+    "notes": "ปล่อยเวอร์ชันแรกสำหรับการใช้งานจริง",
+    "pub_date": "2026-06-21T06:00:00+07:00",
+    "platforms": {
+        "windows-x86_64": {
+            "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q0xYTXIzejFPN0piZDY4SHNVRTBVNHY0UlRZc2gwaU5lWXMyNGIreW9Ha0s4WFZpR1duSEgvTXB3WDhOekw1dlVVVjBFM2w0RWJRbndmdEx5UWI4emdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyMDAwNzE5CWZpbGU6UHl0aG9uIFRyYWluZXIgQnkgQkt1bmdCS18xLjAuMF94NjRfZW4tVVMubXNpClVlTzB6UG53MTB2VEQ1a25SemdkVjV0bU1RSTdlR255TXhEZlBsR092WFpsUDNJOWZKc09oOXNTWWlJYm5sS3BGbUlzcmIzeWxHL1M3UXZZc0VEYUFnPT0K",
+            "url": "https://github.com/BKungBK/python-trainer/releases/download/v1.0.0/Python.Trainer.By.BKungBK_1.0.0_x64_en-US.msi"
+        }
+    }
+}
