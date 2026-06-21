@@ -381,8 +381,7 @@
           {:else if manualUpdateStatus === "Latest"}
             <span
               style="font-size: 11px; color: var(--accent-success); font-weight: 500;"
-              >✓ คุณใช้เวอร์ชันล่าสุดอยู่แล้ว (v{appState.updateManifest
-                ?.version})</span
+              >✓ คุณใช้เวอร์ชันล่าสุดอยู่แล้ว (v{appState.currentVersion})</span
             >
           {:else if manualUpdateStatus === "Error"}
             <span

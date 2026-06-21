@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { getVersion } from "@tauri-apps/api/app"; // เพิ่มการนำเข้าตัวดึงเวอร์ชันของ Tauri
 import { preloadCode } from "$app/navigation";
 import { dev } from "$app/environment";
-
 
 class AppState {
   currentUser = $state<string | null>(null);
@@ -46,6 +46,7 @@ class AppState {
   }
 
   // Update state variables
+  currentVersion = $state<string>("0.0.0"); // เพิ่ม State สำหรับเก็บเวอร์ชันปัจจุบันของแอป
   updateAvailable = $state<boolean>(false);
   updateManifest = $state<any>(null);
   isUpdating = $state<boolean>(false);
@@ -60,6 +61,15 @@ class AppState {
 
   // Public test cases cache keyed by problem ID — avoids repeated SQLite calls
   publicTestCasesCache = new Map<string, any[]>();
+
+  // ฟังก์ชันดึงเวอร์ชันปัจจุบันจากตัวระบบ Tauri
+  async loadAppVersion() {
+    try {
+      this.currentVersion = await getVersion();
+    } catch (e) {
+      console.error("Failed to load app version:", e);
+    }
+  }
 
   async checkForUpdatesSilently(force = false) {
     if (dev && !force) {
@@ -149,6 +159,9 @@ class AppState {
 
   async prepareApp() {
     if (!this.currentUser) return;
+
+    // ดึงเวอร์ชันปัจจุบันเข้ามาเก็บไว้ในระบบตอนเริ่มต้นใช้งานแอปทันที
+    await this.loadAppVersion();
 
     // 0. Check for updates
     this.loadingMessage = "กำลังตรวจเช็กเวอร์ชันใหม่...";
