@@ -281,6 +281,27 @@
     }
   });
 
+  // Debounce auto-save code changes (1 second)
+  let saveTimeout: any;
+  $effect(() => {
+    const currentCode = code;
+    const user = activeUser;
+    const prob = selectedProblem;
+    
+    if (user && prob && currentCode) {
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        const savedCodeKey = `code_save_${user}_${prob.id}`;
+        localStorage.setItem(savedCodeKey, currentCode);
+      }, 1000);
+    }
+    
+    return () => {
+      if (saveTimeout) clearTimeout(saveTimeout);
+    };
+  });
+
+
   function autoSelectRandomOrRedirect() {
     const unsolved = problems.filter(p => !solvedProblemIds.includes(p.id));
     if (unsolved.length > 0) {
@@ -298,6 +319,16 @@
       setTimeout(() => {
         isSwitchingProblem = false;
       }, 350);
+
+      // Load auto-save for initial problem
+      const user = appState.currentUser;
+      if (user) {
+        const savedCodeKey = `code_save_${user}_${initialProblem.id}`;
+        const saved = localStorage.getItem(savedCodeKey);
+        if (saved) {
+          code = saved;
+        }
+      }
     }
 
     const savedWidth = localStorage.getItem("editor_panel_width");
@@ -344,7 +375,21 @@
 
   async function selectProblem(prob: any) {
     selectedProblem = prob;
-    code = `def solve():\n    # เขียนโค้ดของคุณตรงนี้\n    pass\n\nif __name__ == '__main__':\n    solve()\n`;
+    
+    // Load auto-saved code if available
+    const user = appState.currentUser;
+    if (user) {
+      const savedCodeKey = `code_save_${user}_${prob.id}`;
+      const saved = localStorage.getItem(savedCodeKey);
+      if (saved) {
+        code = saved;
+      } else {
+        code = `def solve():\n    # เขียนโค้ดของคุณตรงนี้\n    pass\n\nif __name__ == '__main__':\n    solve()\n`;
+      }
+    } else {
+      code = `def solve():\n    # เขียนโค้ดของคุณตรงนี้\n    pass\n\nif __name__ == '__main__':\n    solve()\n`;
+    }
+
     sampleResults = null;
     submissionResult = null;
     errorMsg = null;

@@ -1,10 +1,12 @@
 pub mod db;
 pub mod judge;
 pub mod supabase;
+pub mod discord;
 
 use db::{DbManager, Problem, Submission, UserStatus};
 use judge::{execute_python_code, normalize_output};
 use supabase::SupabaseClient;
+use discord::DiscordPresenceManager;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{State, Manager};
@@ -18,6 +20,7 @@ pub struct AppState {
     /// Populated on first get_daily_challenge call and invalidated after submit.
     /// Heartbeat reads from here — no recomputation every 15 seconds.
     pub daily_cache: Mutex<Option<DailyChallengeInfo>>,
+    pub discord: DiscordPresenceManager,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -107,6 +110,49 @@ fn save_setting(state: State<'_, AppState>, key: String, value: String) -> Resul
 }
 
 #[tauri::command]
+fn update_discord_presence(
+    state: State<'_, AppState>,
+    pathname: String,
+    problem_id: Option<String>,
+    user: String,
+) -> Result<(), String> {
+    let details = if pathname.starts_with("/daily") && problem_id.is_some() {
+        let pid = problem_id.unwrap();
+        if let Ok(Some(prob)) = state.db.get_problem(&pid) {
+            format!("กำลังแก้โจทย์: {}", prob.title)
+        } else {
+            "กำลังแก้โจทย์".to_string()
+        }
+    } else {
+        "กำลังเลือกโจทย์".to_string()
+    };
+    
+    let state_str = format!("ผู้เรียน: {}", user);
+    state.discord.update(details, state_str);
+    Ok(())
+}
+
+#[tauri::command]
+fn get_submissions(state: State<'_, AppState>, user_id: String) -> Result<Vec<db::SubmissionWithProblem>, String> {
+    state.db.get_submissions_with_problems(&user_id)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_peer_submissions(state: State<'_, AppState>) -> Result<Vec<Submission>, String> {
+    let user_id = state.db.get_setting("active_user")
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "No active user".to_string())?;
+    let peer_id = if user_id == "NG" { "MR3" } else { "NG" };
+    state.supabase.fetch_user_submissions(&peer_id).await
+}
+
+#[tauri::command]
+fn get_supabase_config(state: State<'_, AppState>) -> Result<(String, String), String> {
+    Ok(state.supabase.get_config())
+}
+
+#[tauri::command]
 fn get_public_test_cases(state: State<'_, AppState>, problem_id: String) -> Result<Vec<db::TestCase>, String> {
     state.db.get_public_test_cases(&problem_id)
         .map_err(|e| e.to_string())
@@ -135,7 +181,7 @@ fn run_sample(
     let timeout_ms = state.db.get_setting("timeout_ms")
         .unwrap_or(None)
         .and_then(|s| s.parse::<u64>().ok())
-        .unwrap_or(3000);
+        .unwrap_or(15000);
 
     let mut results = Vec::new();
     for tc in public_tcs {
@@ -181,7 +227,7 @@ async fn submit_solution(
     let timeout_ms = state.db.get_setting("timeout_ms")
         .unwrap_or(None)
         .and_then(|s| s.parse::<u64>().ok())
-        .unwrap_or(3000);
+        .unwrap_or(15000);
 
     let mut passed_count = 0;
     let total_count = private_tcs.len() as i32;
@@ -448,13 +494,42 @@ async fn perform_heartbeat_inner(
     Ok(())
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeartbeatResponse {
+    pub peer_status: Option<UserStatus>,
+    pub peer_submissions: Vec<Submission>,
+}
+
 #[tauri::command]
 async fn send_heartbeat(
     state: State<'_, AppState>,
     status: String,
     current_problem_id: Option<String>,
-) -> Result<(), String> {
-    perform_heartbeat_inner(&state.db, &state.supabase, &state.daily_cache, status, current_problem_id).await
+) -> Result<HeartbeatResponse, String> {
+    // 1. Send our heartbeat
+    perform_heartbeat_inner(&state.db, &state.supabase, &state.daily_cache, status, current_problem_id).await?;
+    
+    // 2. Fetch active user & peer ID
+    let user_id = state.db.get_setting("active_user")
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "No active user".to_string())?;
+    let peer_id = if user_id == "NG" { "MR3" } else { "NG" };
+    
+    // 3. Fetch peer status (using the same logic as get_peer_status)
+    let peer_status = if let Ok(Some(status)) = state.supabase.fetch_peer_status(&peer_id).await {
+        let _ = state.db.save_user_status(&status);
+        Some(status)
+    } else {
+        state.db.get_user_status(&peer_id).unwrap_or(None)
+    };
+    
+    // 4. Fetch peer submissions
+    let peer_submissions = state.supabase.fetch_user_submissions(&peer_id).await.unwrap_or_default();
+    
+    Ok(HeartbeatResponse {
+        peer_status,
+        peer_submissions,
+    })
 }
 
 #[tauri::command]
@@ -577,10 +652,12 @@ pub fn run() {
             let app_data_dir = app.path().app_data_dir().expect("Failed to get app data directory");
             let db = DbManager::new(app_data_dir);
             let supabase = SupabaseClient::new();
+            let discord = DiscordPresenceManager::new("1518711095651471490");
             app.manage(AppState {
                 db,
                 supabase,
                 daily_cache: Mutex::new(None),
+                discord,
             });
             Ok(())
         })
@@ -597,7 +674,11 @@ pub fn run() {
             get_peer_status,
             save_setting,
             get_setting,
-            reroll_daily_challenge
+            reroll_daily_challenge,
+            update_discord_presence,
+            get_submissions,
+            get_peer_submissions,
+            get_supabase_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

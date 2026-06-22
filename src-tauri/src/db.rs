@@ -41,6 +41,21 @@ pub struct Submission {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubmissionWithProblem {
+    pub id: String,
+    pub user_id: String,
+    pub problem_id: String,
+    pub problem_title: String,
+    pub problem_category: String,
+    pub code: String,
+    pub score: i32,
+    pub passed_count: i32,
+    pub total_count: i32,
+    pub verdict: String,
+    pub submitted_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserStatus {
     pub user_id: String,
     pub status: String,
@@ -448,6 +463,34 @@ impl DbManager {
                 verdict: row.get(7)?,
                 submitted_at: row.get(8)?,
                 synced: synced_int != 0,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>>>()
+    }
+
+    pub fn get_submissions_with_problems(&self, user_id: &str) -> Result<Vec<SubmissionWithProblem>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT s.id, s.user_id, s.problem_id, p.title, p.category, s.code, s.score, s.passed_count, s.total_count, s.verdict, s.submitted_at
+             FROM submissions s
+             LEFT JOIN problems p ON s.problem_id = p.id
+             WHERE s.user_id = ? ORDER BY s.submitted_at DESC",
+        )?;
+        let rows = stmt.query_map(params![user_id], |row| {
+            let title: String = row.get(3).unwrap_or_else(|_| "Unknown Problem".to_string());
+            let category: String = row.get(4).unwrap_or_else(|_| "Unknown Category".to_string());
+            Ok(SubmissionWithProblem {
+                id: row.get(0)?,
+                user_id: row.get(1)?,
+                problem_id: row.get(2)?,
+                problem_title: title,
+                problem_category: category,
+                code: row.get(5)?,
+                score: row.get(6)?,
+                passed_count: row.get(7)?,
+                total_count: row.get(8)?,
+                verdict: row.get(9)?,
+                submitted_at: row.get(10)?,
             })
         })?;
         rows.collect::<Result<Vec<_>>>()

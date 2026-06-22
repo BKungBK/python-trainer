@@ -208,6 +208,7 @@ class AppState {
         preloadCode("/daily"),
         preloadCode("/daily/list"),
         preloadCode("/settings"),
+        preloadCode("/submissions"),
         // Dynamically import Monaco Editor to trigger downloading and parsing by browser in background
         import("monaco-editor").catch((e) => console.error("Monaco preload error:", e))
       ]);

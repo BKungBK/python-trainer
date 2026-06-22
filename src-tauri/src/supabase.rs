@@ -63,6 +63,10 @@ impl SupabaseClient {
         !self.url.is_empty() && !self.anon_key.is_empty()
     }
 
+    pub fn get_config(&self) -> (String, String) {
+        (self.url.clone(), self.anon_key.clone())
+    }
+
     fn get_headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();
         if let Ok(val) = HeaderValue::from_str(&self.anon_key) {

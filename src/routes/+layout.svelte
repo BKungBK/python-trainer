@@ -44,6 +44,143 @@
     };
   });
 
+  // Update Discord Rich Presence reactively when page or active user changes
+  $effect(() => {
+    const user = currentUser;
+    const pathname = $page.url.pathname;
+    const problemId = $page.url.searchParams.get("problem");
+    
+    if (user) {
+      invoke("update_discord_presence", { pathname, problemId, user }).catch((e) => {
+        console.error("Failed to update Discord presence:", e);
+      });
+    }
+  });
+
+  // Realtime Supabase Subscriptions for instant peer updates
+  let submissionsSubscription: any = null;
+  let userStatusSubscription: any = null;
+
+  $effect(() => {
+    const user = currentUser;
+    
+    // Cleanup old subscriptions
+    if (submissionsSubscription) {
+      submissionsSubscription.unsubscribe();
+      submissionsSubscription = null;
+    }
+    if (userStatusSubscription) {
+      userStatusSubscription.unsubscribe();
+      userStatusSubscription = null;
+    }
+    
+    if (user) {
+      setupSupabaseRealtime(user);
+    }
+    
+    return () => {
+      if (submissionsSubscription) submissionsSubscription.unsubscribe();
+      if (userStatusSubscription) userStatusSubscription.unsubscribe();
+    };
+  });
+
+  async function setupSupabaseRealtime(user: string) {
+    try {
+      const config: [string, string] = await invoke("get_supabase_config");
+      const [url, anonKey] = config;
+      
+      if (url && anonKey) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabaseClient = createClient(url, anonKey);
+        const peerId = user === "NG" ? "MR3" : "NG";
+        
+        // 1. Subscribe to new peer submissions (insertions)
+        submissionsSubscription = supabaseClient
+          .channel('peer-submissions')
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'submissions', filter: `user_id=eq.${peerId}` },
+            (payload: any) => {
+              const sub = payload.new;
+              if (sub && sub.score === 100 && !knownPeerSolvedProblems.has(sub.problem_id)) {
+                knownPeerSolvedProblems.add(sub.problem_id);
+                const problemTitle = getProblemTitle(sub.problem_id);
+                showPeerToast(peerId, problemTitle);
+              }
+            }
+          )
+          .subscribe();
+
+        // 2. Subscribe to peer status updates
+        userStatusSubscription = supabaseClient
+          .channel('peer-status')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'user_status', filter: `user_id=eq.${peerId}` },
+            (payload: any) => {
+              const newStatus = payload.new;
+              if (newStatus) {
+                appState.peerStatus = newStatus;
+              }
+            }
+          )
+          .subscribe();
+      }
+    } catch (e) {
+      console.error("Failed to setup Supabase Realtime:", e);
+    }
+  }
+
+  // Real-time Peer Solved Toasts & Synthesis
+  let toasts = $state<Array<{ id: number; username: string; problemTitle: string }>>([]);
+  let toastIdSeq = 0;
+  let knownPeerSolvedProblems = new Set<string>();
+
+  function showPeerToast(username: string, problemTitle: string) {
+    const id = toastIdSeq++;
+    toasts = [...toasts, { id, username, problemTitle }];
+    playChime();
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+      toasts = toasts.filter(t => t.id !== id);
+    }, 4000);
+  }
+
+  function playChime() {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      
+      // Note 1 (C5)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(523.25, ctx.currentTime);
+      gain1.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start();
+      osc1.stop(ctx.currentTime + 0.4);
+      
+      // Note 2 (G5 - delayed by 100ms)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+      gain2.gain.setValueAtTime(0.12, ctx.currentTime + 0.1);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime + 0.1);
+      osc2.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      console.warn("Chime play failed:", e);
+    }
+  }
+
   // Window control functions
   function minimizeWindow() {
     getCurrentWindow().minimize();
@@ -66,6 +203,19 @@
       const active = await appState.checkActiveUser();
       if (active) {
         await appState.prepareApp();
+        
+        // Seed known peer solved problems to avoid spamming toasts on start
+        try {
+          const peerSubs: any[] = await invoke("get_peer_submissions");
+          for (const sub of peerSubs) {
+            if (sub.score === 100) {
+              knownPeerSolvedProblems.add(sub.problem_id);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to seed initial peer submissions:", e);
+        }
+
         await runHeartbeat();
       } else {
         appState.isLoading = false;
@@ -99,6 +249,14 @@
     await runHeartbeat();
   }
 
+  function getProblemTitle(problemId: string): string {
+    if (appState.dailyChallenge && appState.dailyChallenge.problems) {
+      const prob = appState.dailyChallenge.problems.find(p => p.id === problemId);
+      if (prob) return prob.title;
+    }
+    return problemId;
+  }
+
   async function runHeartbeat() {
     if (!currentUser) return;
     
@@ -113,12 +271,25 @@
     }
 
     try {
-      // Send our heartbeat
-      await invoke("send_heartbeat", { status, currentProblemId });
+      // Send our heartbeat and get bundled peer updates in a single call
+      const response: any = await invoke("send_heartbeat", { status, currentProblemId });
       
-      // Fetch peer status
-      const peer: any = await invoke("get_peer_status");
-      appState.peerStatus = peer;
+      if (response) {
+        const peer = response.peer_status;
+        appState.peerStatus = peer;
+
+        // Check for new solved submissions
+        if (peer && response.peer_submissions) {
+          for (const sub of response.peer_submissions) {
+            if (sub.score === 100 && !knownPeerSolvedProblems.has(sub.problem_id)) {
+              knownPeerSolvedProblems.add(sub.problem_id);
+              // Trigger Toast!
+              const problemTitle = getProblemTitle(sub.problem_id);
+              showPeerToast(peer.user_id, problemTitle);
+            }
+          }
+        }
+      }
     } catch (e) {
       console.error("Heartbeat error:", e);
     }
@@ -216,6 +387,14 @@
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
         <span>ตั้งค่า</span>
+      </a>
+
+      <a href="/submissions" class="sb-item" class:active={$page.url.pathname === "/submissions"} style="--i: 4;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        <span>ประวัติการส่ง</span>
       </a>
 
       <div class="sb-spacer"></div>
@@ -347,6 +526,28 @@
   </div>
 {/if}
 
+<!-- Real-time Peer Achievements Toast Overlay -->
+<div class="toast-overlay">
+  {#each toasts as toast (toast.id)}
+    <div class="toast-card" in:scale={{ duration: 200, start: 0.95 }} out:fade={{ duration: 150 }}>
+      <div class="toast-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <div class="toast-body">
+        <div class="toast-title">ผ่านโจทย์แล้ว!</div>
+        <div class="toast-desc">
+          <span class="toast-highlight">{toast.username}</span> ผ่านโจทย์ <strong>{toast.problemTitle}</strong> แล้ว
+        </div>
+      </div>
+      <button class="toast-close" onclick={() => toasts = toasts.filter(t => t.id !== toast.id)}>
+        &times;
+      </button>
+    </div>
+  {/each}
+</div>
+
 <style>
   .loading-overlay {
     position: fixed;
@@ -468,5 +669,97 @@
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
+  }
+
+  .toast-overlay {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10002;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .toast-card {
+    pointer-events: auto;
+    width: 320px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-success);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    position: relative;
+  }
+
+  .toast-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent-success-bg);
+    color: var(--accent-success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .toast-icon svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .toast-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .toast-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-success);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+
+  .toast-desc {
+    font-size: 12px;
+    color: var(--text-primary);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .toast-desc strong {
+    color: var(--accent-blue);
+  }
+
+  .toast-highlight {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .toast-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+  }
+
+  .toast-close:hover {
+    color: var(--text-primary);
   }
 </style>

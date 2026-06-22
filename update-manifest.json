@@ -1,11 +1,11 @@
 {
-    "version": "1.0.0",
-    "notes": "ปล่อยเวอร์ชันแรกสำหรับการใช้งานจริง",
-    "pub_date": "2026-06-21T06:00:00+07:00",
+    "version": "1.0.1",
+    "notes": "อัปเดตเวอร์ชัน 1.0.1:\n- เพิ่มหน้าประวัติการส่งคำตอบ (Submissions History) ค้นหาและกรองประวัติการทำโจทย์ พร้อมปุ่มกู้คืนโค้ดเก่ากลับมาแก้ไขได้\n- รองรับ Discord Rich Presence แสดงสถานะการทำโจทย์และชื่อผู้ใช้งานบน Discord\n- ปรับปรุงการแจ้งเตือนแบบเรียลไทม์ (Supabase Realtime) พร้อมเสียงแจ้งเตือน (Chime) เมื่อเพื่อนทำโจทย์ผ่าน\n- เพิ่มระบบบันทึกโค้ดอัตโนมัติ (Auto-Save) ป้องกันโค้ดหายเมื่อกดสลับข้อหรือปิดแอป\n- เพิ่มเวลาการทดสอบรันโค้ด (Execution Timeout) เป็น 15 วินาที เพื่อให้รองรับชุดทดสอบที่ซับซ้อนได้ดียิ่งขึ้น",
+    "pub_date": "2026-06-23T04:30:00+07:00",
     "platforms": {
         "windows-x86_64": {
-            "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q00wQWdoUEE4a1RRMnZmYXFpL01RQU9qRndDTzB6TGlJanFUQUlnRVI1TDc3TllRZHloVURDZVNtZUhvVkZ3dmJXY2Q3aVkxbXRodWN4anFHZk1kVnc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyMDE0NTY5CWZpbGU6UHl0aG9uIFRyYWluZXIgQnkgQkt1bmdCS18xLjAuMF94NjRfZW4tVVMubXNpCjhzOVhYV2tURjB3cmg1OHFLWm5QcVd4and6bFJaY2FQSkN0R2xmN3RLTDN5ZlFtYWtIT0IySnpXQ3htZkdldlVPeVhTTk9ua1ZIZHN5Nk9ZZkZRM0RRPT0K",
-            "url": "https://github.com/BKungBK/python-trainer/releases/download/v1.0.0/Python.Trainer.By.BKungBK_1.0.0_x64_en-US.msi"
+            "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q0dGdW9QVGJaUi9nL2FxR0dUUm1XUUp5UExBb2pFQS9DZUR4ZjFTaURHY0I3bjZLRHNSQVp5UE10QXE5VDV3OHJMcVdweHA5eFM3Z1orR3pDT2xjZ2c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyMTY0Njk4CWZpbGU6UHl0aG9uIFRyYWluZXIgQnkgQkt1bmdCS18xLjAuMV94NjRfZW4tVVMubXNpCmUyVVBSNEJwTm1ONUY1blpZcCtidE1zVURDZkxhQ0tNK3M5U2c5RlRMb1p0aitCNlFaRWhhZHdoYUFKUHB5eHV4TlNxNjY0WlV4QWpEYTRiUm5LdUJRPT0K",
+            "url": "https://github.com/BKungBK/python-trainer/releases/download/v1.0.1/Python.Trainer.By.BKungBK_1.0.1_x64_en-US.msi"
         }
     }
 }
