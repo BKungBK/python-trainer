@@ -251,7 +251,7 @@
             ส่งเมื่อ: {formatTime(selectedSub.submitted_at)} &middot; หมวดหมู่: {categoryTranslations[selectedSub.problem_category] || selectedSub.problem_category}
           </p>
         </div>
-        <button class="modal-close-btn" onclick={closeModal} style="position: static; padding: 6px;" aria-label="ปิด">
+        <button class="modal-close-btn" onclick={closeModal} aria-label="ปิด">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -326,6 +326,40 @@
 {/if}
 
 <style>
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-content {
+    position: relative;
+    box-shadow: var(--modal-shadow);
+  }
+  .modal-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .modal-close-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-surface-raised);
+  }
   .sub-row-hover:hover {
     background-color: var(--bg-surface-raised) !important;
   }

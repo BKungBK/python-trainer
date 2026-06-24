@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { invoke as tauriInvoke } from "@tauri-apps/api/core";
   import Editor from "$lib/components/Editor.svelte";
   import Confetti from "$lib/components/Confetti.svelte";
@@ -71,7 +71,18 @@
     if (problemId) {
       return appState.dailyChallenge.problems.find(p => p.id === problemId) || null;
     }
-    // If no problem in URL, auto-select the first unsolved one, or first overall
+    
+    // Restore the last viewed problem if available in localStorage
+    const user = appState.currentUser;
+    if (user) {
+      const savedLastProblemId = localStorage.getItem(`last_problem_${user}`);
+      if (savedLastProblemId) {
+        const found = appState.dailyChallenge.problems.find(p => p.id === savedLastProblemId);
+        if (found) return found;
+      }
+    }
+
+    // If no problem in URL and no last problem, auto-select the first unsolved one, or first overall
     const unsolved = appState.dailyChallenge.problems.filter(
       p => !appState.dailyChallenge!.solved_problem_ids.includes(p.id)
     );
@@ -340,6 +351,15 @@
     }
   });
 
+  onDestroy(() => {
+    const user = appState.currentUser;
+    const prob = selectedProblem;
+    if (user && prob && code) {
+      const savedCodeKey = `code_save_${user}_${prob.id}`;
+      localStorage.setItem(savedCodeKey, code);
+    }
+  });
+
   async function loadDailyChallenge() {
     loading = true;
     selectRandomLoaderMessage("challenge");
@@ -374,10 +394,25 @@
   }
 
   async function selectProblem(prob: any) {
+    // Save current code of the PREVIOUS problem first before overwriting
+    const user = appState.currentUser;
+    if (user && selectedProblem && code) {
+      const prevSavedCodeKey = `code_save_${user}_${selectedProblem.id}`;
+      localStorage.setItem(prevSavedCodeKey, code);
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+      }
+    }
+
     selectedProblem = prob;
     
+    // Save last selected problem ID to localStorage
+    if (user) {
+      localStorage.setItem(`last_problem_${user}`, prob.id);
+    }
+    
     // Load auto-saved code if available
-    const user = appState.currentUser;
     if (user) {
       const savedCodeKey = `code_save_${user}_${prob.id}`;
       const saved = localStorage.getItem(savedCodeKey);
@@ -413,6 +448,17 @@
   }
 
   function goBackToChecklist() {
+    // Save current code before leaving
+    const user = appState.currentUser;
+    if (user && selectedProblem && code) {
+      const savedCodeKey = `code_save_${user}_${selectedProblem.id}`;
+      localStorage.setItem(savedCodeKey, code);
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+      }
+    }
+
     selectedProblem = null;
     sampleResults = null;
     submissionResult = null;

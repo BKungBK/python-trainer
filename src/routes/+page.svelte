@@ -90,6 +90,7 @@
     switch (status) {
       case "Online": return "online";
       case "Solving Problem": return "solving";
+      case "Idle": return "idle";
       default: return "";
     }
   }
@@ -157,6 +158,8 @@
                 กำลังแก้โจทย์ประจำวัน
               {:else if computedStatus === "Online"}
                 ออนไลน์
+              {:else if computedStatus === "Idle"}
+                ไม่ได้ใช้งาน
               {:else}
                 ออฟไลน์
               {/if}
@@ -166,7 +169,7 @@
             <div class="fc-badge solving">กำลังแก้โจทย์</div>
           {:else}
             <div class="fc-badge">
-              {#if computedStatus === "Online"}ออนไลน์{:else if computedStatus === "Offline"}ออฟไลน์{:else}{computedStatus}{/if}
+              {#if computedStatus === "Online"}ออนไลน์{:else if computedStatus === "Offline"}ออฟไลน์{:else if computedStatus === "Idle"}ไม่ได้ใช้งาน{:else}{computedStatus}{/if}
             </div>
           {/if}
         </div>

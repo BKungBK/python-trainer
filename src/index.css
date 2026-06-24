@@ -330,6 +330,10 @@ body {
   background-color: var(--accent-warning);
 }
 
+.status-dot.idle {
+  background-color: var(--accent-warning);
+}
+
 /* Main Content Area */
 .content-area {
   flex: 1;

@@ -115,8 +115,11 @@ fn update_discord_presence(
     pathname: String,
     problem_id: Option<String>,
     user: String,
+    is_idle: Option<bool>,
 ) -> Result<(), String> {
-    let details = if pathname.starts_with("/daily") && problem_id.is_some() {
+    let details = if is_idle.unwrap_or(false) {
+        "ไม่ได้ใช้งาน".to_string()
+    } else if pathname.starts_with("/daily") && problem_id.is_some() {
         let pid = problem_id.unwrap();
         if let Ok(Some(prob)) = state.db.get_problem(&pid) {
             format!("กำลังแก้โจทย์: {}", prob.title)

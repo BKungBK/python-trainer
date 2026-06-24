@@ -88,6 +88,185 @@
     }
   }
 
+  // Custom Python tokenizer for Monaco to support rich highlighting of functions, builtins, etc.
+  const customPythonTokenizer: monaco.languages.IMonarchLanguage = {
+    defaultToken: "",
+    tokenPostfix: ".python",
+    keywords: [
+      "and", "as", "assert", "async", "await", "break", "case", "class", 
+      "continue", "def", "del", "elif", "else", "except", "exec", "finally", 
+      "for", "from", "global", "if", "import", "in", "is", "lambda", "match", 
+      "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", 
+      "with", "yield"
+    ],
+    builtins: [
+      "abs", "all", "any", "bin", "bool", "chr", "classmethod", "compile", 
+      "complex", "delattr", "dict", "dir", "divmod", "enumerate", "eval", 
+      "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr", 
+      "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass", 
+      "iter", "len", "list", "locals", "map", "max", "min", "next", "object", 
+      "oct", "open", "ord", "pow", "print", "property", "range", "repr", 
+      "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", 
+      "str", "sum", "super", "tuple", "type", "vars", "zip"
+    ],
+    constants: [
+      "True", "False", "None"
+    ],
+    predefined: [
+      "self", "cls"
+    ],
+    magic: [
+      "__dict__", "__methods__", "__members__", "__class__", "__bases__", 
+      "__name__", "__mro__", "__subclasses__", "__init__", "__import__"
+    ],
+    brackets: [
+      { open: "{", close: "}", token: "delimiter.curly" },
+      { open: "[", close: "]", token: "delimiter.bracket" },
+      { open: "(", close: ")", token: "delimiter.parenthesis" }
+    ],
+    tokenizer: {
+      root: [
+        { include: "@whitespace" },
+        { include: "@numbers" },
+        { include: "@strings" },
+        
+        [/[,:;]/, "delimiter"],
+        [/[{}\[\]()]/, "@brackets"],
+        
+        [/@[a-zA-Z_]\w*/, "tag"], // decorators
+        
+        // Class definition matching
+        [/(class\s+)([a-zA-Z_]\w*)/, ["keyword", "type.class"]],
+        
+        // Function definition matching
+        [/(def\s+)([a-zA-Z_]\w*)/, ["keyword", "function.definition"]],
+        
+        // Function call matching (any identifier followed by '(')
+        [
+          /[a-zA-Z_]\w*(?=\s*\()/,
+          {
+            cases: {
+              "@builtins": "keyword.builtin",
+              "@default": "function.call"
+            }
+          }
+        ],
+
+        // Standard identifiers
+        [
+          /[a-zA-Z_]\w*/,
+          {
+            cases: {
+              "@keywords": "keyword",
+              "@builtins": "keyword.builtin",
+              "@constants": "keyword.constant",
+              "@predefined": "keyword.predefined",
+              "@magic": "keyword.magic",
+              "@default": "identifier"
+            }
+          }
+        ]
+      ],
+      whitespace: [
+        [/\s+/, "white"],
+        [/(^#.*$)/, "comment"],
+        [/'''/, "string", "@endDocString"],
+        [/"""/, "string", "@endDblDocString"]
+      ],
+      endDocString: [
+        [/[^']+/, "string"],
+        [/\\'/, "string"],
+        [/'''/, "string", "@popall"],
+        [/'/, "string"]
+      ],
+      endDblDocString: [
+        [/[^"]+/, "string"],
+        [/\\"/, "string"],
+        [/"""/, "string", "@popall"],
+        [/"/, "string"]
+      ],
+      numbers: [
+        [/-?0x([abcdef]|[ABCDEF]|\d)+[lL]?/, "number.hex"],
+        [/-?(\d*\.)?\d+([eE][+\-]?\d+)?[jJ]?[lL]?/, "number"]
+      ],
+      strings: [
+        [/'$/, "string.escape", "@popall"],
+        [/f'{1,3}/, "string.escape", "@fStringBody"],
+        [/'/, "string.escape", "@stringBody"],
+        [/"$/, "string.escape", "@popall"],
+        [/f"{1,3}/, "string.escape", "@fDblStringBody"],
+        [/"/, "string.escape", "@dblStringBody"]
+      ],
+      fStringBody: [
+        [/[^\\'\{\}]+$/, "string", "@popall"],
+        [/[^\\'\{\}]+/, "string"],
+        [/\{[^\}':!=]+/, "identifier", "@fStringDetail"],
+        [/\\./, "string"],
+        [/'/, "string.escape", "@popall"],
+        [/\\$/, "string"]
+      ],
+      stringBody: [
+        [/[^\\']+$/, "string", "@popall"],
+        [/[^\\']+/, "string"],
+        [/\\./, "string"],
+        [/'/, "string.escape", "@popall"],
+        [/\\$/, "string"]
+      ],
+      fDblStringBody: [
+        [/[^\\"\{\}]+$/, "string", "@popall"],
+        [/[^\\"\{\}]+/, "string"],
+        [/\{[^\}':!=]+/, "identifier", "@fStringDetail"],
+        [/\\./, "string"],
+        [/"/, "string.escape", "@popall"],
+        [/\\$/, "string"]
+      ],
+      dblStringBody: [
+        [/[^\\"]+$/, "string", "@popall"],
+        [/[^\\"]+/, "string"],
+        [/\\./, "string"],
+        [/"/, "string.escape", "@popall"],
+        [/\\$/, "string"]
+      ],
+      fStringDetail: [
+        [/[:][^}]+/, "string"],
+        [/[!][ars]/, "string"],
+        [/=/, "string"],
+        [/\}/, "identifier", "@pop"]
+      ]
+    }
+  };
+
+  const practiceRangeTheme: monaco.editor.IStandaloneThemeData = {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "", foreground: "e0e0e0" }, // primary text
+      { token: "keyword", foreground: "c586c0" }, // magenta/purple keywords
+      { token: "keyword.control", foreground: "c586c0" },
+      { token: "keyword.builtin", foreground: "4fc1ff" }, // light blue builtins (e.g. print, len)
+      { token: "keyword.constant", foreground: "569cd6" }, // blue for True, False, None
+      { token: "keyword.predefined", foreground: "9cdcfe" }, // light blue for self, cls
+      { token: "keyword.magic", foreground: "dcdcaa" }, // yellow for __init__
+      { token: "function.call", foreground: "dcdcaa" }, // yellow for function calls
+      { token: "function.definition", foreground: "dcdcaa" }, // yellow for function definitions
+      { token: "type.class", foreground: "4ec9b0" }, // teal for class names
+      { token: "string", foreground: "ce9178" }, // orange-brown for strings
+      { token: "comment", foreground: "6a9955", fontStyle: "italic" }, // green for comments
+      { token: "number", foreground: "b5cea8" }, // light green for numbers
+      { token: "operator", foreground: "d4d4d4" },
+      { token: "tag", foreground: "c586c0" }, // decorators
+    ],
+    colors: {
+      "editor.background": "#141414", // matches index.css / design.md bg
+      "editor.foreground": "#e0e0e0",
+      "editorLineNumber.foreground": "#555555",
+      "editorLineNumber.activeForeground": "#5b9bd5", // active accent blue
+      "editor.lineHighlightBackground": "#1f1f1f", // card bg
+      "editorCursor.foreground": "#ffffff", // white cursor
+      "editor.selectionBackground": "#264f78",
+    }
+  };
+
   onMount(async () => {
     // Configure Monaco Environment for Web Workers in Vite
     const win = window as any;
@@ -99,10 +278,14 @@
       };
     }
 
+    // Register custom python tokenizer & theme
+    monaco.languages.setMonarchTokensProvider("python", customPythonTokenizer);
+    monaco.editor.defineTheme("practice-range-theme", practiceRangeTheme);
+
     editor = monaco.editor.create(containerEl, {
       value: code,
       language: "python",
-      theme: "vs-dark",
+      theme: "practice-range-theme",
       automaticLayout: true,
       tabSize: 4,
       insertSpaces: true,
