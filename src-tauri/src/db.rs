@@ -1,9 +1,9 @@
 use rusqlite::{params, Connection, Result};
-use std::path::PathBuf;
-use std::fs;
-use std::sync::Mutex;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Mutex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Problem {
@@ -94,8 +94,12 @@ impl DbManager {
         let manager = DbManager {
             conn: Mutex::new(conn),
         };
-        manager.init_db().expect("Failed to initialize SQLite database");
-        manager.seed_if_empty().expect("Failed to seed mock problems");
+        manager
+            .init_db()
+            .expect("Failed to initialize SQLite database");
+        manager
+            .seed_if_empty()
+            .expect("Failed to seed mock problems");
         manager
     }
 
@@ -244,8 +248,12 @@ impl DbManager {
             )?;
             for prob in problems {
                 stmt.execute(params![
-                    prob.id, prob.title, prob.category,
-                    prob.description, prob.input_specification, prob.output_specification
+                    prob.id,
+                    prob.title,
+                    prob.category,
+                    prob.description,
+                    prob.input_specification,
+                    prob.output_specification
                 ])?;
             }
         }
@@ -287,7 +295,11 @@ impl DbManager {
                 output_specification: row.get(5)?,
             })
         })?;
-        if let Some(res) = rows.next() { Ok(Some(res?)) } else { Ok(None) }
+        if let Some(res) = rows.next() {
+            Ok(Some(res?))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn delete_problem(&self, problem_id: &str) -> Result<()> {
@@ -382,9 +394,8 @@ impl DbManager {
 
     pub fn get_all_public_test_cases(&self) -> Result<Vec<TestCase>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT id, problem_id, input, expected_output FROM public_test_cases",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT id, problem_id, input, expected_output FROM public_test_cases")?;
         let rows = stmt.query_map([], |row| {
             Ok(TestCase {
                 id: row.get(0)?,
@@ -399,9 +410,8 @@ impl DbManager {
 
     pub fn get_all_private_test_cases(&self) -> Result<Vec<TestCase>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT id, problem_id, input, expected_output FROM private_test_cases",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT id, problem_id, input, expected_output FROM private_test_cases")?;
         let rows = stmt.query_map([], |row| {
             Ok(TestCase {
                 id: row.get(0)?,
@@ -468,7 +478,10 @@ impl DbManager {
         rows.collect::<Result<Vec<_>>>()
     }
 
-    pub fn get_submissions_with_problems(&self, user_id: &str) -> Result<Vec<SubmissionWithProblem>> {
+    pub fn get_submissions_with_problems(
+        &self,
+        user_id: &str,
+    ) -> Result<Vec<SubmissionWithProblem>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT s.id, s.user_id, s.problem_id, p.title, p.category, s.code, s.score, s.passed_count, s.total_count, s.verdict, s.submitted_at
@@ -478,7 +491,9 @@ impl DbManager {
         )?;
         let rows = stmt.query_map(params![user_id], |row| {
             let title: String = row.get(3).unwrap_or_else(|_| "Unknown Problem".to_string());
-            let category: String = row.get(4).unwrap_or_else(|_| "Unknown Category".to_string());
+            let category: String = row
+                .get(4)
+                .unwrap_or_else(|_| "Unknown Category".to_string());
             Ok(SubmissionWithProblem {
                 id: row.get(0)?,
                 user_id: row.get(1)?,
@@ -522,15 +537,17 @@ impl DbManager {
 
     pub fn mark_submission_synced(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        conn.execute("UPDATE submissions SET synced = 1 WHERE id = ?", params![id])?;
+        conn.execute(
+            "UPDATE submissions SET synced = 1 WHERE id = ?",
+            params![id],
+        )?;
         Ok(())
     }
 
     pub fn get_best_score(&self, user_id: &str, problem_id: &str) -> Result<i32> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT MAX(score) FROM submissions WHERE user_id = ? AND problem_id = ?",
-        )?;
+        let mut stmt = conn
+            .prepare("SELECT MAX(score) FROM submissions WHERE user_id = ? AND problem_id = ?")?;
         let mut rows = stmt.query(params![user_id, problem_id])?;
         if let Some(row) = rows.next()? {
             let score: Option<i32> = row.get(0)?;
@@ -584,7 +601,10 @@ impl DbManager {
 
     pub fn delete_daily_challenge_by_date(&self, date_str: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        conn.execute("DELETE FROM daily_challenges WHERE date = ?", params![date_str])?;
+        conn.execute(
+            "DELETE FROM daily_challenges WHERE date = ?",
+            params![date_str],
+        )?;
         Ok(())
     }
 
@@ -598,8 +618,12 @@ impl DbManager {
              (user_id, status, current_problem_id, daily_progress, daily_completed, last_active)
              VALUES (?, ?, ?, ?, ?, ?)",
             params![
-                status.user_id, status.status, status.current_problem_id,
-                status.daily_progress, completed_int, status.last_active
+                status.user_id,
+                status.status,
+                status.current_problem_id,
+                status.daily_progress,
+                completed_int,
+                status.last_active
             ],
         )?;
         Ok(())
@@ -622,7 +646,11 @@ impl DbManager {
                 last_active: row.get(5)?,
             })
         })?;
-        if let Some(res) = rows.next() { Ok(Some(res?)) } else { Ok(None) }
+        if let Some(res) = rows.next() {
+            Ok(Some(res?))
+        } else {
+            Ok(None)
+        }
     }
 
     // ---- Seed ----
@@ -689,22 +717,28 @@ impl DbManager {
         }
 
         let tcs = vec![
-            ("tc_hello_pub",  "prob_hello",  "",             "Hello, World!\n", true),
-            ("tc_hello_priv", "prob_hello",  "",             "Hello, World!\n", false),
-            ("tc_echo_pub",   "prob_echo",   "antigravity",  "antigravity\n",   true),
-            ("tc_echo_priv",  "prob_echo",   "test_run",     "test_run\n",      false),
-            ("tc_sq_pub1",    "prob_square", "5",            "25\n",            true),
-            ("tc_sq_pub2",    "prob_square", "-3",           "0\n",             true),
-            ("tc_sq_priv1",   "prob_square", "10",           "100\n",           false),
-            ("tc_sq_priv2",   "prob_square", "0",            "0\n",             false),
-            ("tc_sum_pub",    "prob_sum",    "5",            "15\n",            true),
-            ("tc_sum_priv1",  "prob_sum",    "10",           "55\n",            false),
-            ("tc_sum_priv2",  "prob_sum",    "1",            "1\n",             false),
-            ("tc_db_pub",     "prob_double", "4.5",          "9.0\n",           true),
-            ("tc_db_priv",    "prob_double", "7",            "14.0\n",          false),
-            ("tc_max_pub",    "prob_max",    "3 7 2 9 1",    "9\n",             true),
-            ("tc_max_priv1",  "prob_max",    "-5 -10 -2 -8", "-2\n",            false),
-            ("tc_max_priv2",  "prob_max",    "42",           "42\n",            false),
+            ("tc_hello_pub", "prob_hello", "", "Hello, World!\n", true),
+            ("tc_hello_priv", "prob_hello", "", "Hello, World!\n", false),
+            (
+                "tc_echo_pub",
+                "prob_echo",
+                "antigravity",
+                "antigravity\n",
+                true,
+            ),
+            ("tc_echo_priv", "prob_echo", "test_run", "test_run\n", false),
+            ("tc_sq_pub1", "prob_square", "5", "25\n", true),
+            ("tc_sq_pub2", "prob_square", "-3", "0\n", true),
+            ("tc_sq_priv1", "prob_square", "10", "100\n", false),
+            ("tc_sq_priv2", "prob_square", "0", "0\n", false),
+            ("tc_sum_pub", "prob_sum", "5", "15\n", true),
+            ("tc_sum_priv1", "prob_sum", "10", "55\n", false),
+            ("tc_sum_priv2", "prob_sum", "1", "1\n", false),
+            ("tc_db_pub", "prob_double", "4.5", "9.0\n", true),
+            ("tc_db_priv", "prob_double", "7", "14.0\n", false),
+            ("tc_max_pub", "prob_max", "3 7 2 9 1", "9\n", true),
+            ("tc_max_priv1", "prob_max", "-5 -10 -2 -8", "-2\n", false),
+            ("tc_max_priv2", "prob_max", "42", "42\n", false),
         ];
 
         for (id, prob_id, input, expected, visible) in tcs {

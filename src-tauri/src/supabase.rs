@@ -1,13 +1,19 @@
+use crate::db::{DbManager, Problem, Submission, TestCase, UserStatus};
 use reqwest::header::{HeaderMap, HeaderValue};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use crate::db::{Problem, TestCase, Submission, UserStatus, DbManager};
 
 #[derive(Clone)]
 pub struct SupabaseClient {
     url: String,
     anon_key: String,
     client: reqwest::Client,
+}
+
+impl Default for SupabaseClient {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SupabaseClient {
@@ -17,21 +23,25 @@ impl SupabaseClient {
             .timeout(Duration::from_secs(10))
             .build()
             .unwrap_or_default();
-        
-        SupabaseClient { url, anon_key, client }
+
+        SupabaseClient {
+            url,
+            anon_key,
+            client,
+        }
     }
 
     fn load_credentials() -> (String, String) {
         // 1. Try compile-time environment variables
         let url_opt = option_env!("SUPABASE_URL");
         let key_opt = option_env!("SUPABASE_ANON_KEY");
-        
+
         if let (Some(url), Some(key)) = (url_opt, key_opt) {
             if !url.is_empty() && !key.is_empty() {
                 return (url.to_string(), key.to_string());
             }
         }
-        
+
         // 2. Try reading from a local .env file in the workspace root
         // (Vite and Tauri compile from the root, but dev server runs in root, so let's try root and src-tauri)
         for path in &[".env", "src-tauri/.env", "../.env"] {
@@ -55,7 +65,7 @@ impl SupabaseClient {
                 }
             }
         }
-        
+
         (String::new(), String::new())
     }
 
@@ -71,7 +81,10 @@ impl SupabaseClient {
         let mut headers = HeaderMap::new();
         if let Ok(val) = HeaderValue::from_str(&self.anon_key) {
             headers.insert("apikey", val.clone());
-            headers.insert("Authorization", HeaderValue::from_str(&format!("Bearer {}", self.anon_key)).unwrap_or(val));
+            headers.insert(
+                "Authorization",
+                HeaderValue::from_str(&format!("Bearer {}", self.anon_key)).unwrap_or(val),
+            );
         }
         headers
     }
@@ -86,19 +99,32 @@ impl SupabaseClient {
         let headers = self.get_headers();
 
         loop {
-            let url = format!("{}/rest/v1/{}?select=*&limit={}&offset={}", self.url, table_name, limit, offset);
-            let res = self.client.get(&url)
+            let url = format!(
+                "{}/rest/v1/{}?select=*&limit={}&offset={}",
+                self.url, table_name, limit, offset
+            );
+            let res = self
+                .client
+                .get(&url)
                 .headers(headers.clone())
                 .send()
                 .await
                 .map_err(|e| format!("Network error fetching paginated {}: {}", table_name, e))?;
 
             if !res.status().is_success() {
-                return Err(format!("Supabase {} query returned error code: {}", table_name, res.status()));
+                return Err(format!(
+                    "Supabase {} query returned error code: {}",
+                    table_name,
+                    res.status()
+                ));
             }
 
-            let items: Vec<T> = res.json().await
-                .map_err(|e| format!("Failed to parse response for paginated {}: {}", table_name, e))?;
+            let items: Vec<T> = res.json().await.map_err(|e| {
+                format!(
+                    "Failed to parse response for paginated {}: {}",
+                    table_name, e
+                )
+            })?;
 
             let len = items.len();
             all_items.extend(items);
@@ -114,7 +140,9 @@ impl SupabaseClient {
 
     pub async fn pull_and_sync_problems(&self, db: &DbManager) -> Result<(), String> {
         if !self.is_configured() {
-            return Err("Supabase is not configured. Run in offline mode or check credentials.".to_string());
+            return Err(
+                "Supabase is not configured. Run in offline mode or check credentials.".to_string(),
+            );
         }
 
         let headers = self.get_headers();
@@ -132,20 +160,30 @@ impl SupabaseClient {
         let dc_fut = client.get(&dc_url).headers(headers.clone()).send();
         let cc_fut = client.get(&cc_url).headers(headers).send();
 
-        let (problems_res, public_tcs_res, private_tcs_res, dc_res, cc_res) = tokio::join!(
-            problems_fut,
-            pub_tc_fut,
-            priv_tc_fut,
-            dc_fut,
-            cc_fut
-        );
+        let (problems_res, public_tcs_res, private_tcs_res, dc_res, cc_res) =
+            tokio::join!(problems_fut, pub_tc_fut, priv_tc_fut, dc_fut, cc_fut);
+
+        // Decode the core problem/test-case snapshots before mutating local state. This
+        // prevents their network/JSON failures from leaving the cache partially updated.
+        let problems = problems_res?;
+        let public_tcs = public_tcs_res?;
+        let private_tcs = private_tcs_res?;
+
+        // An empty problem snapshot is usually an RLS/configuration failure, not a
+        // legitimate request to erase the local catalogue. Keep the local cache safe.
+        if problems.is_empty() {
+            return Err(
+                "Supabase returned an empty problem snapshot; local cache was preserved."
+                    .to_string(),
+            );
+        }
 
         // 1. Process Problems
-        let problems = problems_res?;
         db.insert_problems_batch(&problems)
             .map_err(|e| format!("Failed to cache problems: {}", e))?;
 
-        let fetched_prob_ids: std::collections::HashSet<String> = problems.iter().map(|p| p.id.clone()).collect();
+        let fetched_prob_ids: std::collections::HashSet<String> =
+            problems.iter().map(|p| p.id.clone()).collect();
         // Delete local problems not in fetched list
         if let Ok(local_probs) = db.get_problems() {
             for p in local_probs {
@@ -156,27 +194,33 @@ impl SupabaseClient {
         }
 
         // 2. Process Public Test Cases
-        let public_tcs = public_tcs_res?;
         db.insert_public_test_cases_batch(&public_tcs)
             .map_err(|e| format!("Failed to cache public test cases: {}", e))?;
-        let fetched_pub_tc_ids: std::collections::HashSet<String> = public_tcs.iter().map(|tc| tc.id.clone()).collect();
-        if let Ok(local_pub_tcs) = db.get_all_public_test_cases() {
-            for tc in local_pub_tcs {
-                if !fetched_pub_tc_ids.contains(&tc.id) {
-                    let _ = db.delete_public_test_case(&tc.id);
+        let fetched_pub_tc_ids: std::collections::HashSet<String> =
+            public_tcs.iter().map(|tc| tc.id.clone()).collect();
+        // Do not erase a working local cache when RLS/configuration returns an empty
+        // test-case snapshot. A non-empty snapshot is safe to use for pruning.
+        if !public_tcs.is_empty() {
+            if let Ok(local_pub_tcs) = db.get_all_public_test_cases() {
+                for tc in local_pub_tcs {
+                    if !fetched_pub_tc_ids.contains(&tc.id) {
+                        let _ = db.delete_public_test_case(&tc.id);
+                    }
                 }
             }
         }
 
         // 3. Process Private Test Cases
-        let private_tcs = private_tcs_res?;
         db.insert_private_test_cases_batch(&private_tcs)
             .map_err(|e| format!("Failed to cache private test cases: {}", e))?;
-        let fetched_priv_tc_ids: std::collections::HashSet<String> = private_tcs.iter().map(|tc| tc.id.clone()).collect();
-        if let Ok(local_priv_tcs) = db.get_all_private_test_cases() {
-            for tc in local_priv_tcs {
-                if !fetched_priv_tc_ids.contains(&tc.id) {
-                    let _ = db.delete_private_test_case(&tc.id);
+        let fetched_priv_tc_ids: std::collections::HashSet<String> =
+            private_tcs.iter().map(|tc| tc.id.clone()).collect();
+        if !private_tcs.is_empty() {
+            if let Ok(local_priv_tcs) = db.get_all_private_test_cases() {
+                for tc in local_priv_tcs {
+                    if !fetched_priv_tc_ids.contains(&tc.id) {
+                        let _ = db.delete_private_test_case(&tc.id);
+                    }
                 }
             }
         }
@@ -189,7 +233,9 @@ impl SupabaseClient {
                 problem_ids: serde_json::Value,
             }
             if dc_res.status().is_success() {
-                let rows: Vec<DailyChallengeRow> = dc_res.json().await
+                let rows: Vec<DailyChallengeRow> = dc_res
+                    .json()
+                    .await
                     .map_err(|e| format!("Failed to parse daily challenges: {}", e))?;
                 for row in rows {
                     if let Ok(prob_ids) = serde_json::from_value::<Vec<String>>(row.problem_ids) {
@@ -268,17 +314,23 @@ impl SupabaseClient {
         }
 
         let sub_url = format!("{}/rest/v1/submissions?user_id=eq.{}", self.url, user_id);
-        let res = self.client.get(&sub_url)
+        let res = self
+            .client
+            .get(&sub_url)
             .headers(self.get_headers())
             .send()
             .await
             .map_err(|e| format!("Network error fetching user submissions: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Supabase user submissions fetch returned error: {}", res.status()));
+            return Err(format!(
+                "Supabase user submissions fetch returned error: {}",
+                res.status()
+            ));
         }
 
-        let list: Vec<Submission> = res.json()
+        let list: Vec<Submission> = res
+            .json()
             .await
             .map_err(|e| format!("Failed to parse user submissions: {}", e))?;
 
@@ -287,19 +339,33 @@ impl SupabaseClient {
 
     pub async fn push_submission(&self, sub: &Submission) -> Result<(), String> {
         if !self.is_configured() {
-            return Ok(()); // Silently skip sync when offline
+            return Err(
+                "Supabase is not configured; submission remains queued locally.".to_string(),
+            );
         }
 
-        let sub_url = format!("{}/rest/v1/submissions", self.url);
-        let res = self.client.post(&sub_url)
-            .headers(self.get_headers())
+        // Upsert by the locally generated submission id. This makes retries safe when
+        // a request reaches Supabase but the client times out before receiving a reply.
+        let sub_url = format!("{}/rest/v1/submissions?on_conflict=id", self.url);
+        let mut headers = self.get_headers();
+        headers.insert(
+            "Prefer",
+            HeaderValue::from_static("resolution=merge-duplicates"),
+        );
+        let res = self
+            .client
+            .post(&sub_url)
+            .headers(headers)
             .json(sub)
             .send()
             .await
             .map_err(|e| format!("Network error pushing submission: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Supabase submissions returned error: {}", res.status()));
+            return Err(format!(
+                "Supabase submissions returned error: {}",
+                res.status()
+            ));
         }
 
         Ok(())
@@ -313,10 +379,15 @@ impl SupabaseClient {
         // Use UPSERT by checking response / using postgrest upsert format
         // Upsert format: POST with Prefer: resolution=merge-duplicates
         let mut headers = self.get_headers();
-        headers.insert("Prefer", HeaderValue::from_static("resolution=merge-duplicates"));
-        
+        headers.insert(
+            "Prefer",
+            HeaderValue::from_static("resolution=merge-duplicates"),
+        );
+
         let upsert_url = format!("{}/rest/v1/user_status", self.url);
-        let res = self.client.post(&upsert_url)
+        let res = self
+            .client
+            .post(&upsert_url)
             .headers(headers)
             .json(status)
             .send()
@@ -336,7 +407,9 @@ impl SupabaseClient {
         }
 
         let status_url = format!("{}/rest/v1/user_status?user_id=eq.{}", self.url, peer_id);
-        let res = self.client.get(&status_url)
+        let res = self
+            .client
+            .get(&status_url)
             .headers(self.get_headers())
             .send()
             .await
@@ -346,7 +419,8 @@ impl SupabaseClient {
             return Err(format!("Supabase status fetch failed: {}", res.status()));
         }
 
-        let mut list: Vec<UserStatus> = res.json()
+        let mut list: Vec<UserStatus> = res
+            .json()
             .await
             .map_err(|e| format!("Failed to parse peer status: {}", e))?;
 
@@ -357,7 +431,11 @@ impl SupabaseClient {
         }
     }
 
-    pub async fn push_daily_challenge(&self, date_str: &str, problem_ids: &[String]) -> Result<(), String> {
+    pub async fn push_daily_challenge(
+        &self,
+        date_str: &str,
+        problem_ids: &[String],
+    ) -> Result<(), String> {
         if !self.is_configured() {
             return Ok(());
         }
@@ -369,12 +447,20 @@ impl SupabaseClient {
         }
 
         let mut headers = self.get_headers();
-        headers.insert("Prefer", HeaderValue::from_static("resolution=merge-duplicates"));
-        
+        headers.insert(
+            "Prefer",
+            HeaderValue::from_static("resolution=merge-duplicates"),
+        );
+
         let upsert_url = format!("{}/rest/v1/daily_challenges", self.url);
-        let row = DailyChallengeRow { date: date_str, problem_ids };
-        
-        let _ = self.client.post(&upsert_url)
+        let row = DailyChallengeRow {
+            date: date_str,
+            problem_ids,
+        };
+
+        let _ = self
+            .client
+            .post(&upsert_url)
             .headers(headers)
             .json(&row)
             .send()
@@ -383,20 +469,28 @@ impl SupabaseClient {
         Ok(())
     }
 
-    pub async fn fetch_daily_challenge(&self, date_str: &str) -> Result<Option<Vec<String>>, String> {
+    pub async fn fetch_daily_challenge(
+        &self,
+        date_str: &str,
+    ) -> Result<Option<Vec<String>>, String> {
         if !self.is_configured() {
             return Ok(None);
         }
 
         let url = format!("{}/rest/v1/daily_challenges?date=eq.{}", self.url, date_str);
-        let res = self.client.get(&url)
+        let res = self
+            .client
+            .get(&url)
             .headers(self.get_headers())
             .send()
             .await
             .map_err(|e| format!("Network error fetching daily challenge: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Supabase fetch daily challenge returned error: {}", res.status()));
+            return Err(format!(
+                "Supabase fetch daily challenge returned error: {}",
+                res.status()
+            ));
         }
 
         #[derive(Deserialize)]
@@ -404,7 +498,8 @@ impl SupabaseClient {
             problem_ids: serde_json::Value,
         }
 
-        let mut list: Vec<DailyChallengeRow> = res.json()
+        let mut list: Vec<DailyChallengeRow> = res
+            .json()
             .await
             .map_err(|e| format!("Failed to parse daily challenge list: {}", e))?;
 
@@ -424,14 +519,19 @@ impl SupabaseClient {
         }
 
         let url = format!("{}/rest/v1/daily_challenges?date=eq.{}", self.url, date_str);
-        let res = self.client.delete(&url)
+        let res = self
+            .client
+            .delete(&url)
             .headers(self.get_headers())
             .send()
             .await
             .map_err(|e| format!("Network error deleting daily challenge: {}", e))?;
 
         if !res.status().is_success() && res.status() != reqwest::StatusCode::NOT_FOUND {
-            return Err(format!("Supabase delete daily challenge returned error: {}", res.status()));
+            return Err(format!(
+                "Supabase delete daily challenge returned error: {}",
+                res.status()
+            ));
         }
 
         Ok(())

@@ -201,16 +201,15 @@ class AppState {
     this.loadingMessage = "กำลังโหลดชุดโจทย์ประจำวัน...";
     await this.prefetchDailyChallenge();
 
-    // 4. Preload SvelteKit route codes and Monaco Editor bundle in parallel during startup screen
+    // 4. Preload SvelteKit route codes in parallel during startup screen.
+    // Monaco is loaded on demand by the editor so it does not block initial startup.
     this.loadingMessage = "กำลังเพิ่มประสิทธิภาพการตอบสนองหน้าจอ...";
     try {
       await Promise.all([
         preloadCode("/daily"),
         preloadCode("/daily/list"),
         preloadCode("/settings"),
-        preloadCode("/submissions"),
-        // Dynamically import Monaco Editor to trigger downloading and parsing by browser in background
-        import("monaco-editor").catch((e) => console.error("Monaco preload error:", e))
+        preloadCode("/submissions")
       ]);
     } catch (e) {
       console.error("Route code preloading failed:", e);

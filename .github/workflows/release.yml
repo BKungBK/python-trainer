@@ -4,6 +4,22 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version increment for the app release'
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      release_notes:
+        description: 'Optional release notes'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   publish-tauri:
@@ -39,19 +55,62 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Bump version for manual release
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        env:
+          VERSION_BUMP: ${{ inputs.bump }}
+        run: |
+          npm version $env:VERSION_BUMP --no-git-tag-version
+          $version = node -p "require('./package.json').version"
+
+          $cargoPath = 'src-tauri/Cargo.toml'
+          $cargo = Get-Content -Raw $cargoPath
+          $cargo = [regex]::Replace($cargo, '(?m)^version = "[^"]+"', "version = `"$version`"", 1)
+          Set-Content -Path $cargoPath -Value $cargo -NoNewline -Encoding utf8
+
+          node -e 'const fs=require("fs"); const p="src-tauri/tauri.conf.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.version=require("./package.json").version; fs.writeFileSync(p, JSON.stringify(c,null,2)+"\n");'
+
+      - name: Check Svelte and TypeScript
+        run: npm run check
+
+      - name: Check Rust formatting
+        working-directory: src-tauri
+        run: cargo fmt --all -- --check
+
+      - name: Run Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+
+      - name: Run Rust clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features --locked -- -D warnings
+
       - name: Build Svelte frontend
         run: npm run build
 
+      - name: Commit version and create release tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+          git commit -m "chore: release v$version"
+          git push origin HEAD:master
+          git tag -a "v$version" -m "Release v$version"
+          git push origin "v$version"
+
       - name: Build and Package Tauri App
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__ # tauri-action will automatically replace this with the version from tauri.conf.json
+          releaseCommitish: ${{ github.event_name == 'workflow_dispatch' && 'master' || github.sha }}
           releaseName: 'v__VERSION__'
-          releaseBody: 'ดาวน์โหลดไฟล์อัปเดตเวอร์ชัน v__VERSION__'
-          releaseDraft: true
+          releaseBody: ${{ inputs.release_notes || 'Download update v__VERSION__' }}
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

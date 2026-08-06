@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import * as monaco from "monaco-editor";
-  import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+  import type * as Monaco from "monaco-editor";
   import { appState } from "$lib/state.svelte";
 
   // Svelte 5 properties
@@ -9,7 +8,8 @@
 
   let containerEl: HTMLDivElement;
   let canvasEl: HTMLCanvasElement;
-  let editor: monaco.editor.IStandaloneCodeEditor | null = null;
+  let editor: Monaco.editor.IStandaloneCodeEditor | null = null;
+  let isDestroyed = false;
   let isUpdatingFromInside = false;
   
   // Animation properties
@@ -89,7 +89,7 @@
   }
 
   // Custom Python tokenizer for Monaco to support rich highlighting of functions, builtins, etc.
-  const customPythonTokenizer: monaco.languages.IMonarchLanguage = {
+  const customPythonTokenizer: Monaco.languages.IMonarchLanguage = {
     defaultToken: "",
     tokenPostfix: ".python",
     keywords: [
@@ -236,7 +236,7 @@
     }
   };
 
-  const practiceRangeTheme: monaco.editor.IStandaloneThemeData = {
+  const practiceRangeTheme: Monaco.editor.IStandaloneThemeData = {
     base: "vs-dark",
     inherit: true,
     rules: [
@@ -268,64 +268,77 @@
   };
 
   onMount(async () => {
-    // Configure Monaco Environment for Web Workers in Vite
-    const win = window as any;
-    if (!win.MonacoEnvironment) {
-      win.MonacoEnvironment = {
-        getWorker() {
-          return new editorWorker();
-        }
+    try {
+      const [{ default: editorWorker }, monacoModule] = await Promise.all([
+        import("monaco-editor/esm/vs/editor/editor.worker?worker"),
+        import("monaco-editor/esm/vs/editor/editor.api")
+      ]);
+
+      if (isDestroyed || !containerEl) return;
+
+      // Configure Monaco Environment for Web Workers in Vite
+      const win = window as typeof window & {
+        MonacoEnvironment?: { getWorker: () => Worker };
       };
-    }
+      if (!win.MonacoEnvironment) {
+        win.MonacoEnvironment = {
+          getWorker() {
+            return new editorWorker();
+          }
+        };
+      }
 
-    // Register custom python tokenizer & theme
-    monaco.languages.setMonarchTokensProvider("python", customPythonTokenizer);
-    monaco.editor.defineTheme("practice-range-theme", practiceRangeTheme);
+      // Register custom python tokenizer & theme
+      monacoModule.languages.setMonarchTokensProvider("python", customPythonTokenizer);
+      monacoModule.editor.defineTheme("practice-range-theme", practiceRangeTheme);
 
-    editor = monaco.editor.create(containerEl, {
-      value: code,
-      language: "python",
-      theme: "practice-range-theme",
-      automaticLayout: true,
-      tabSize: 4,
-      insertSpaces: true,
-      minimap: { enabled: false },
-      scrollBeyondLastLine: false,
-      lineNumbers: "on",
-      fontSize: 14,
-      fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
-      padding: { top: 8, bottom: 8 },
-    });
+      editor = monacoModule.editor.create(containerEl, {
+        value: code,
+        language: "python",
+        theme: "practice-range-theme",
+        automaticLayout: true,
+        tabSize: 4,
+        insertSpaces: true,
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        lineNumbers: "on",
+        fontSize: 14,
+        fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
+        padding: { top: 8, bottom: 8 },
+      });
 
-    editor.onDidChangeModelContent((event) => {
-      if (editor) {
-        isUpdatingFromInside = true;
-        code = editor.getValue();
-        isUpdatingFromInside = false;
+      editor.onDidChangeModelContent((event) => {
+        if (editor) {
+          isUpdatingFromInside = true;
+          code = editor.getValue();
+          isUpdatingFromInside = false;
 
-        // Trigger typing sparkles if Power Mode is active and it's a typing action
-        if (appState.isPowerModeActive && event.changes.length > 0) {
-          const position = editor.getPosition();
-          if (position) {
-            const coordinates = editor.getScrolledVisiblePosition(position);
-            if (coordinates) {
-              // coordinates.height represents the height of the cursor/line
-              spawnParticles(coordinates.left, coordinates.top + (coordinates.height || 18));
+          // Trigger typing sparkles if Power Mode is active and it's a typing action
+          if (appState.isPowerModeActive && event.changes.length > 0) {
+            const position = editor.getPosition();
+            if (position) {
+              const coordinates = editor.getScrolledVisiblePosition(position);
+              if (coordinates) {
+                // coordinates.height represents the height of the cursor/line
+                spawnParticles(coordinates.left, coordinates.top + (coordinates.height || 18));
+              }
             }
           }
         }
-      }
-    });
+      });
 
-    // Observe size changes
-    resizeObserver = new ResizeObserver(() => {
+      // Observe size changes
+      resizeObserver = new ResizeObserver(() => {
+        handleResize();
+      });
+      resizeObserver.observe(containerEl);
+
+      // Initialize dimensions and start rendering loop
       handleResize();
-    });
-    resizeObserver.observe(containerEl);
-
-    // Initialize dimensions and start rendering loop
-    handleResize();
-    render();
+      render();
+    } catch (error) {
+      console.error("Monaco editor failed to load:", error);
+    }
   });
 
   // Keep editor content in sync when code prop changes from outside (e.g. changing problems)
@@ -339,6 +352,7 @@
   });
 
   onDestroy(() => {
+    isDestroyed = true;
     if (editor) {
       editor.dispose();
     }

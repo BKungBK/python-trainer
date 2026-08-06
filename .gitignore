@@ -45,11 +45,11 @@ src-tauri/tauri-key.key
 
 # Rust / Cargo (Fallback in case of root commands)
 /src-tauri/target/
-/src-tauri/Cargo.lock
 
 # AI Agents & Design Assistant Tools
 *.agents
 *.impeccable
+.codebase-memory/
 
 # Generated Output / Scratch Data
 /output/

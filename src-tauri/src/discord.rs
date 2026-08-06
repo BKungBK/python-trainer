@@ -1,13 +1,10 @@
+use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 
 pub enum PresenceMsg {
-    Update {
-        details: String,
-        state: String,
-    },
+    Update { details: String, state: String },
     Shutdown,
 }
 
@@ -18,7 +15,7 @@ pub struct DiscordPresenceManager {
 impl DiscordPresenceManager {
     pub fn new(client_id: &'static str) -> Self {
         let (tx, rx) = channel::<PresenceMsg>();
-        
+
         thread::spawn(move || {
             let connect = |id: &str| -> Option<DiscordIpcClient> {
                 let mut cli = DiscordIpcClient::new(id);
@@ -29,13 +26,13 @@ impl DiscordPresenceManager {
                     None
                 }
             };
-            
+
             let mut client = connect(client_id);
             let mut current_details = "กำลังเลือกโจทย์".to_string();
             let mut current_state = "".to_string();
             let start_timestamp = chrono::Utc::now().timestamp();
             let mut last_update_success = false;
-            
+
             // Set initial activity
             if let Some(ref mut cli) = client {
                 let assets = activity::Assets::new()
@@ -51,7 +48,7 @@ impl DiscordPresenceManager {
                     last_update_success = true;
                 }
             }
-            
+
             loop {
                 // If not connected or last update failed, wait 10s before retrying.
                 // Otherwise wait longer or block on message.
@@ -60,7 +57,7 @@ impl DiscordPresenceManager {
                 } else {
                     Duration::from_secs(60)
                 };
-                
+
                 match rx.recv_timeout(timeout) {
                     Ok(PresenceMsg::Shutdown) => {
                         if let Some(mut cli) = client.take() {
@@ -71,11 +68,11 @@ impl DiscordPresenceManager {
                     Ok(PresenceMsg::Update { details, state }) => {
                         current_details = details;
                         current_state = state;
-                        
+
                         if client.is_none() {
                             client = connect(client_id);
                         }
-                        
+
                         if let Some(ref mut cli) = client {
                             let assets = activity::Assets::new()
                                 .large_image("iconapp")
@@ -100,7 +97,7 @@ impl DiscordPresenceManager {
                         if client.is_none() {
                             client = connect(client_id);
                         }
-                        
+
                         if let Some(ref mut cli) = client {
                             let assets = activity::Assets::new()
                                 .large_image("iconapp")
@@ -129,10 +126,10 @@ impl DiscordPresenceManager {
                 }
             }
         });
-        
+
         Self { sender: tx }
     }
-    
+
     pub fn update(&self, details: String, state: String) {
         let _ = self.sender.send(PresenceMsg::Update { details, state });
     }
