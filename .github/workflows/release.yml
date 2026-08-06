@@ -15,6 +15,7 @@ on:
           - patch
           - minor
           - major
+          - none
       release_notes:
         description: 'Optional release notes'
         required: false
@@ -56,7 +57,7 @@ jobs:
         run: npm ci
 
       - name: Bump version for manual release
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && inputs.bump != 'none'
         shell: pwsh
         env:
           VERSION_BUMP: ${{ inputs.bump }}
@@ -88,7 +89,7 @@ jobs:
         run: npm run build
 
       - name: Commit version and create release tag
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && inputs.bump != 'none'
         shell: pwsh
         run: |
           $version = node -p "require('./package.json').version"
