@@ -44,7 +44,6 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/BKungBK/python-trainer/releases/latest/download/latest.json",
         "https://raw.githubusercontent.com/BKungBK/python-trainer/master/update-manifest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg3QUQwNzQ0REYyRDBEOApSV1RZMFBKTmROQjZDRGlaallicjRrTkhoQ0RxcmNTcFc3dlFPUzRTN0RYczIvMVVaTVpuYjJ2cgo="
