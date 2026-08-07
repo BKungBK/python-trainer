@@ -407,51 +407,6 @@ body {
   grid-column: 1 / -1;
 }
 
-/* Peer Accountability Card */
-.friend-card {
-  background: var(--bg-card);
-  border: 1px solid var(--bg-surface-raised);
-  border-radius: var(--radius-md);
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.fc-info {
-  flex: 1;
-}
-
-.fc-name {
-  font-size: 13px;
-  color: #ccc;
-  font-weight: 500;
-}
-
-.fc-status {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.fc-badge {
-  font-size: 11px;
-  padding: 3px 9px;
-  border-radius: 5px;
-  background: var(--bg-surface-raised);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-}
-
-.fc-badge.solving {
-  background: var(--accent-blue-bg);
-  color: var(--accent-blue);
-  border-color: var(--accent-blue-border);
-}
-
 .divider {
   height: 1px;
   background: #222;
@@ -1055,11 +1010,6 @@ body {
   font-family: var(--font-mono);
 }
 
-.user-switcher {
-  display: flex;
-  gap: 8px;
-}
-
 .us-opt {
   padding: 7px 16px;
   border-radius: var(--radius-sm);
@@ -1515,6 +1465,94 @@ input[type="text"]:focus {
   100% {
     left: 100%;
   }
+}
+
+.user-presence-section {
+  margin-top: 28px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.section-kicker {
+  color: var(--accent-blue);
+  font: 11px var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.section-title {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.section-count {
+  color: var(--text-muted);
+  font: 11px var(--font-mono);
+}
+
+.user-presence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-presence-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+}
+
+.presence-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.presence-dot.online {
+  background: var(--accent-green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 14%, transparent);
+}
+
+.presence-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.presence-name {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presence-status {
+  color: var(--text-muted);
+  font: 11px var(--font-mono);
+  margin-top: 2px;
+}
+
+.presence-you,
+.presence-badge {
+  color: var(--accent-blue);
+  font: 10px var(--font-mono);
+  margin-left: 8px;
+}
+
+.presence-badge {
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

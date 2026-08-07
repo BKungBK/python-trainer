@@ -51,6 +51,9 @@ src-tauri/tauri-key.key
 *.impeccable
 .codebase-memory/
 
+# Supabase CLI local link metadata
+supabase/.temp/
+
 # Generated Output / Scratch Data
 /output/
 *.db

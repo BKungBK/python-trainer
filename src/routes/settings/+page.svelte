@@ -4,6 +4,8 @@
   import { appState } from "$lib/state.svelte";
 
   let activeUser = $state<string | null>(null);
+  let nameInput = $state("");
+  let nameError = $state<string | null>(null);
   let pythonPath = $state("");
   let syncStatus = $state("Idle"); // "Idle", "Syncing", "Success", "Error"
   let syncError = $state<string | null>(null);
@@ -20,6 +22,7 @@
   onMount(async () => {
     try {
       activeUser = await invoke("get_active_user");
+      nameInput = activeUser || "";
       const path: string | null = await invoke("get_setting", { key: "python_path" });
       pythonPath = path || "";
 
@@ -37,17 +40,6 @@
       console.error("Failed to load settings:", e);
     }
   });
-
-  async function switchUser(userId: "NG" | "MR3") {
-    try {
-      await invoke("select_user", { userId });
-      activeUser = userId;
-      // Reload layout status
-      window.location.reload();
-    } catch (e) {
-      console.error(e);
-    }
-  }
 
   async function handleAutoDetect() {
     testStatus = "Testing";
@@ -70,7 +62,22 @@
   async function saveAllSettings() {
     saveStatus = "Saving";
     saveError = null;
+    nameError = null;
     try {
+      const trimmedName = nameInput.trim();
+      if (!trimmedName) {
+        nameError = "กรุณาใส่ชื่อก่อนบันทึก";
+        throw new Error(nameError);
+      }
+
+      if (trimmedName !== activeUser) {
+        const saved = await appState.setUserName(trimmedName);
+        if (!saved) {
+          throw new Error("บันทึกชื่อไม่สำเร็จ");
+        }
+        activeUser = trimmedName;
+      }
+
       // Save python path
       await invoke("save_setting", { key: "python_path", value: pythonPath });
       
@@ -154,25 +161,20 @@
     <!-- Active Identity Switcher -->
     <div style="padding: 8px; margin: -8px; border-radius: var(--radius-sm); transition: background-color var(--duration-state) var(--ease-out-quart);" class:flash-highlight={saveStatus === "Success"}>
       <div class="settings-section-title">ผู้ใช้ปัจจุบัน</div>
-      <div class="user-switcher">
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div 
-          class="us-opt" 
-          class:active={activeUser === "NG"} 
-          onclick={() => switchUser("NG")}
-        >
-          NG
-        </div>
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div 
-          class="us-opt" 
-          class:active={activeUser === "MR3"} 
-          onclick={() => switchUser("MR3")}
-        >
-          MR3
-        </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <input
+          type="text"
+          bind:value={nameInput}
+          maxlength="64"
+          autocomplete="name"
+          placeholder="ชื่อของคุณ"
+          aria-label="ชื่อของคุณ"
+        />
+        {#if nameError}
+          <span style="font-size: 11px; color: var(--accent-error);">{nameError}</span>
+        {:else}
+          <span style="font-size: 11px; color: var(--text-muted);">ชื่อนี้จะถูกใช้ต่อบนเครื่องนี้จนกว่าจะเปลี่ยน</span>
+        {/if}
       </div>
     </div>
 

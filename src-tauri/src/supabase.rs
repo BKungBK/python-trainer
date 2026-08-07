@@ -313,10 +313,10 @@ impl SupabaseClient {
             return Ok(Vec::new());
         }
 
-        let sub_url = format!("{}/rest/v1/submissions?user_id=eq.{}", self.url, user_id);
         let res = self
             .client
-            .get(&sub_url)
+            .get(format!("{}/rest/v1/submissions", self.url))
+            .query(&[("user_id", format!("eq.{user_id}"))])
             .headers(self.get_headers())
             .send()
             .await
@@ -401,34 +401,30 @@ impl SupabaseClient {
         Ok(())
     }
 
-    pub async fn fetch_peer_status(&self, peer_id: &str) -> Result<Option<UserStatus>, String> {
+    pub async fn fetch_user_statuses(&self) -> Result<Vec<UserStatus>, String> {
         if !self.is_configured() {
-            return Ok(None);
+            return Ok(Vec::new());
         }
 
-        let status_url = format!("{}/rest/v1/user_status?user_id=eq.{}", self.url, peer_id);
         let res = self
             .client
-            .get(&status_url)
+            .get(format!("{}/rest/v1/user_status", self.url))
+            .query(&[("select", "*"), ("order", "last_active.desc")])
             .headers(self.get_headers())
             .send()
             .await
-            .map_err(|e| format!("Network error fetching peer status: {}", e))?;
+            .map_err(|e| format!("Network error fetching user statuses: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Supabase status fetch failed: {}", res.status()));
+            return Err(format!(
+                "Supabase user statuses fetch returned error: {}",
+                res.status()
+            ));
         }
 
-        let mut list: Vec<UserStatus> = res
-            .json()
+        res.json()
             .await
-            .map_err(|e| format!("Failed to parse peer status: {}", e))?;
-
-        if !list.is_empty() {
-            Ok(Some(list.remove(0)))
-        } else {
-            Ok(None)
-        }
+            .map_err(|e| format!("Failed to parse user statuses: {}", e))
     }
 
     pub async fn push_daily_challenge(

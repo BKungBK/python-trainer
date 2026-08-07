@@ -8,9 +8,18 @@
   let dailyProgress = $state<number>(0);
   let dailyRequired = $state<number>(0);
   let loading = $state(true);
-  
-  // Peer tracking derived from global state
-  let peerStatus = $derived(appState.peerStatus);
+  let onlineUsers = $derived(appState.onlineUsers);
+
+  function isUserOnline(user: any) {
+    if (user.status === "Offline") return false;
+    const lastActive = Date.parse(user.last_active ?? "");
+    return Number.isFinite(lastActive) && Date.now() - lastActive <= 45_000;
+  }
+
+  function displayUserStatus(user: any) {
+    if (!isUserOnline(user)) return "Offline";
+    return user.status || "Online";
+  }
 
   // Format today's date
   const todayStr = new Intl.DateTimeFormat('th-TH', { 
@@ -74,26 +83,6 @@
     }
   }
 
-  function getComputedPeerStatus(peer: typeof peerStatus) {
-    if (!peer) return "Offline";
-    const lastActive = new Date(peer.last_active);
-    const now = new Date();
-    const diffMs = now.getTime() - lastActive.getTime();
-    if (diffMs > 120000) { // 2 minutes
-      return "Offline";
-    }
-    return peer.status;
-  }
-
-  // Get peer dot class
-  function getPeerDotClass(status: string) {
-    switch (status) {
-      case "Online": return "online";
-      case "Solving Problem": return "solving";
-      case "Idle": return "idle";
-      default: return "";
-    }
-  }
 </script>
 
 <div class="screen">
@@ -138,46 +127,33 @@
       </div>
     </div>
 
-    <!-- Peer Presence Section -->
-    <div>
-      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; letter-spacing: 0.04em; text-transform: uppercase;">
-        เพื่อนร่วมฝึกฝน
-      </div>
-
-      {#if peerStatus}
-        {@const computedStatus = getComputedPeerStatus(peerStatus)}
-        <div class="friend-card">
-          <div class="avatar" style="width: 32px; height: 32px; font-size: 12px;">
-            {peerStatus.user_id}
-          </div>
-          <div class="fc-info">
-            <div class="fc-name">{peerStatus.user_id}</div>
-            <div class="fc-status">
-              <div class="status-dot {getPeerDotClass(computedStatus)}"></div>
-              {#if computedStatus === "Solving Problem"}
-                กำลังแก้โจทย์ประจำวัน
-              {:else if computedStatus === "Online"}
-                ออนไลน์
-              {:else if computedStatus === "Idle"}
-                ไม่ได้ใช้งาน
-              {:else}
-                ออฟไลน์
+    {#if onlineUsers.length > 0}
+      <section class="user-presence-section" aria-label="ผู้ใช้งาน">
+        <div class="section-heading">
+          <span class="section-kicker">PRESENCE</span>
+          <span class="section-title">ผู้ใช้งาน</span>
+          <span class="section-count">{onlineUsers.length}</span>
+        </div>
+        <div class="user-presence-list">
+          {#each onlineUsers as user (user.user_id)}
+            {@const online = isUserOnline(user)}
+            <div class="user-presence-card">
+              <span class="presence-dot" class:online></span>
+              <div class="presence-info">
+                <div class="presence-name">
+                  {user.user_id}
+                  {#if user.user_id === activeUser}<span class="presence-you">คุณ</span>{/if}
+                </div>
+                <div class="presence-status">{displayUserStatus(user)}</div>
+              </div>
+              {#if user.daily_completed}
+                <span class="presence-badge">DAILY ✓</span>
               {/if}
             </div>
-          </div>
-          {#if computedStatus === "Solving Problem"}
-            <div class="fc-badge solving">กำลังแก้โจทย์</div>
-          {:else}
-            <div class="fc-badge">
-              {#if computedStatus === "Online"}ออนไลน์{:else if computedStatus === "Offline"}ออฟไลน์{:else if computedStatus === "Idle"}ไม่ได้ใช้งาน{:else}{computedStatus}{/if}
-            </div>
-          {/if}
+          {/each}
         </div>
-      {:else}
-        <div class="friend-card" style="justify-content: center; padding: 20px; color: var(--text-muted); font-size: 12px;">
-          ไม่มีข้อมูลสถานะของเพื่อนในขณะนี้
-        </div>
-      {/if}
-    </div>
+      </section>
+    {/if}
+
   {/if}
 </div>

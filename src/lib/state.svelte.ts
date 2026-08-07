@@ -7,8 +7,8 @@ import { dev } from "$app/environment";
 
 class AppState {
   currentUser = $state<string | null>(null);
+  onlineUsers = $state<any[]>([]);
   syncStatus = $state<string>("Idle"); // "Idle", "Syncing", "Success", "Error"
-  peerStatus = $state<any>(null);
   needsRefresh = $state<number>(0);
   isLoading = $state<boolean>(true);
   showProfileSelector = $state<boolean>(false);
@@ -116,19 +116,25 @@ class AppState {
   async checkActiveUser() {
     try {
       const active: string | null = await invoke("get_active_user");
-      this.currentUser = active;
-      return active;
+      // Legacy installs stored the two fixed profile IDs. Ask for a real name once.
+      const savedName = active && active !== "NG" && active !== "MR3" ? active : null;
+      this.currentUser = savedName;
+      return savedName;
     } catch (e) {
       console.error("Failed to check active user:", e);
       return null;
     }
   }
 
-  async selectProfile(userId: "NG" | "MR3") {
+  async setUserName(name: string): Promise<boolean> {
     try {
+      const userName = name.trim();
+      if (!userName) {
+        throw new Error("Please enter your name");
+      }
       this.showProfileSelector = false;
       this.isLoading = true;
-      this.loadingMessage = `กำลังสลับโปรไฟล์ไปยัง ${userId}...`;
+      this.loadingMessage = `กำลังโหลดข้อมูลของ ${userName}...`;
 
       // Mark old user offline before switching
       if (this.currentUser) {
@@ -139,8 +145,8 @@ class AppState {
         }
       }
 
-      await invoke("select_user", { userId });
-      this.currentUser = userId;
+      await invoke("select_user", { userId: userName });
+      this.currentUser = userName;
 
       // Clear all caches for the new user
       this.dailyChallenge = null;
@@ -150,10 +156,12 @@ class AppState {
       await this.prepareApp();
 
       this.triggerRefresh();
+      return true;
     } catch (e) {
       console.error("Failed to set user:", e);
       this.isLoading = false;
       this.showProfileSelector = true;
+      return false;
     }
   }
 
@@ -200,6 +208,7 @@ class AppState {
     // 3. Prefetch daily challenge — pages will read from cache instantly
     this.loadingMessage = "กำลังโหลดชุดโจทย์ประจำวัน...";
     await this.prefetchDailyChallenge();
+    await this.refreshOnlineUsers();
 
     // 4. Preload SvelteKit route codes in parallel during startup screen.
     // Monaco is loaded on demand by the editor so it does not block initial startup.
@@ -217,6 +226,14 @@ class AppState {
 
     // Done — everything is ready
     this.isLoading = false;
+  }
+
+  async refreshOnlineUsers() {
+    try {
+      this.onlineUsers = await invoke("get_user_statuses");
+    } catch (e) {
+      console.error("Failed to load user statuses:", e);
+    }
   }
 
   async prefetchDailyChallenge() {

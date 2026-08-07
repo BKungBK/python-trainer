@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { invoke } from "@tauri-apps/api/core";
+  import { createClient } from "@supabase/supabase-js";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { fade, scale } from "svelte/transition";
   import { smoothScroll } from "$lib/actions/smoothScroll";
@@ -13,11 +14,48 @@
   // State variables
   let currentUser = $derived(appState.currentUser);
   let syncStatus = $derived(appState.syncStatus);
-  let peerStatus = $derived(appState.peerStatus);
 
   let isMaximized = $state(false);
   let isIdle = $state(false);
   let inactivityTimer: any;
+  let presenceClient: any = null;
+  let presenceChannel: any = null;
+
+  async function setupPresenceRealtime() {
+    try {
+      const [url, anonKey]: [string, string] = await invoke("get_supabase_config");
+      if (!url || !anonKey) return;
+
+      presenceClient = createClient(url, anonKey);
+      presenceChannel = presenceClient
+        .channel("user-statuses")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "user_status" },
+          (payload: any) => {
+            const changed = payload.new ?? payload.old;
+            if (!changed?.user_id) return;
+
+            if (payload.eventType === "DELETE") {
+              appState.onlineUsers = appState.onlineUsers.filter(
+                (user: any) => user.user_id !== changed.user_id,
+              );
+              return;
+            }
+
+            appState.onlineUsers = [
+              changed,
+              ...appState.onlineUsers.filter(
+                (user: any) => user.user_id !== changed.user_id,
+              ),
+            ];
+          },
+        )
+        .subscribe();
+    } catch (e) {
+      console.error("Failed to subscribe to user presence:", e);
+    }
+  }
 
   function resetInactivityTimer() {
     if (inactivityTimer) {
@@ -83,147 +121,6 @@
     }
   });
 
-  // Realtime Supabase Subscriptions for instant peer updates
-  let submissionsSubscription: any = null;
-  let userStatusSubscription: any = null;
-
-  $effect(() => {
-    const user = currentUser;
-
-    // Cleanup old subscriptions
-    if (submissionsSubscription) {
-      submissionsSubscription.unsubscribe();
-      submissionsSubscription = null;
-    }
-    if (userStatusSubscription) {
-      userStatusSubscription.unsubscribe();
-      userStatusSubscription = null;
-    }
-
-    if (user) {
-      setupSupabaseRealtime(user);
-    }
-
-    return () => {
-      if (submissionsSubscription) submissionsSubscription.unsubscribe();
-      if (userStatusSubscription) userStatusSubscription.unsubscribe();
-    };
-  });
-
-  async function setupSupabaseRealtime(user: string) {
-    try {
-      const config: [string, string] = await invoke("get_supabase_config");
-      const [url, anonKey] = config;
-
-      if (url && anonKey) {
-        const { createClient } = await import("@supabase/supabase-js");
-        const supabaseClient = createClient(url, anonKey);
-        const peerId = user === "NG" ? "MR3" : "NG";
-
-        // 1. Subscribe to new peer submissions (insertions)
-        submissionsSubscription = supabaseClient
-          .channel("peer-submissions")
-          .on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "submissions",
-              filter: `user_id=eq.${peerId}`,
-            },
-            (payload: any) => {
-              const sub = payload.new;
-              if (
-                sub &&
-                sub.score === 100 &&
-                !knownPeerSolvedProblems.has(sub.problem_id)
-              ) {
-                knownPeerSolvedProblems.add(sub.problem_id);
-                const problemTitle = getProblemTitle(sub.problem_id);
-                showPeerToast(peerId, problemTitle);
-              }
-            },
-          )
-          .subscribe();
-
-        // 2. Subscribe to peer status updates
-        userStatusSubscription = supabaseClient
-          .channel("peer-status")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "user_status",
-              filter: `user_id=eq.${peerId}`,
-            },
-            (payload: any) => {
-              const newStatus = payload.new;
-              if (newStatus) {
-                appState.peerStatus = newStatus;
-              }
-            },
-          )
-          .subscribe();
-      }
-    } catch (e) {
-      console.error("Failed to setup Supabase Realtime:", e);
-    }
-  }
-
-  // Real-time Peer Solved Toasts & Synthesis
-  let toasts = $state<
-    Array<{ id: number; username: string; problemTitle: string }>
-  >([]);
-  let toastIdSeq = 0;
-  let knownPeerSolvedProblems = new Set<string>();
-
-  function showPeerToast(username: string, problemTitle: string) {
-    const id = toastIdSeq++;
-    toasts = [...toasts, { id, username, problemTitle }];
-    playChime();
-
-    // Auto-remove after 4 seconds
-    setTimeout(() => {
-      toasts = toasts.filter((t) => t.id !== id);
-    }, 4000);
-  }
-
-  function playChime() {
-    try {
-      const AudioCtx =
-        window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-
-      // Note 1 (C5)
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = "sine";
-      osc1.frequency.setValueAtTime(523.25, ctx.currentTime);
-      gain1.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start();
-      osc1.stop(ctx.currentTime + 0.4);
-
-      // Note 2 (G5 - delayed by 100ms)
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = "sine";
-      osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
-      gain2.gain.setValueAtTime(0.12, ctx.currentTime + 0.1);
-      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(ctx.currentTime + 0.1);
-      osc2.stop(ctx.currentTime + 0.5);
-    } catch (e) {
-      console.warn("Chime play failed:", e);
-    }
-  }
-
   // Window control functions
   function minimizeWindow() {
     getCurrentWindow().minimize();
@@ -247,18 +144,7 @@
       const active = await appState.checkActiveUser();
       if (active) {
         await appState.prepareApp();
-
-        // Seed known peer solved problems to avoid spamming toasts on start
-        try {
-          const peerSubs: any[] = await invoke("get_peer_submissions");
-          for (const sub of peerSubs) {
-            if (sub.score === 100) {
-              knownPeerSolvedProblems.add(sub.problem_id);
-            }
-          }
-        } catch (e) {
-          console.error("Failed to seed initial peer submissions:", e);
-        }
+        await setupPresenceRealtime();
 
         // Initialize inactivity detection
         resetInactivityTimer();
@@ -280,7 +166,7 @@
         isMaximized = await appWindow.isMaximized();
       });
 
-      // Start Heartbeat & Peer Status check interval (every 15 seconds)
+      // Keep the local user's activity status up to date.
       interval = setInterval(async () => {
         await runHeartbeat();
       }, 15000);
@@ -292,14 +178,36 @@
       if (interval) clearInterval(interval);
       if (unlistenResize) unlistenResize();
       if (inactivityTimer) clearTimeout(inactivityTimer);
+      if (presenceChannel) presenceChannel.unsubscribe();
+      if (presenceClient) presenceClient.removeAllChannels();
       activityEvents.forEach((event) => {
         window.removeEventListener(event, resetInactivityTimer);
       });
     };
   });
 
-  async function selectProfile(userId: "NG" | "MR3") {
-    await appState.selectProfile(userId);
+  let profileName = $state("");
+  let profileError = $state<string | null>(null);
+
+  function openProfileSelector() {
+    profileName = currentUser ?? "";
+    profileError = null;
+    appState.showProfileSelector = true;
+  }
+
+  async function selectProfile() {
+    const name = profileName.trim();
+    if (!name) {
+      profileError = "กรุณาใส่ชื่อก่อนดำเนินการต่อ";
+      return;
+    }
+
+    profileError = null;
+    const saved = await appState.setUserName(name);
+    if (!saved) {
+      profileError = "บันทึกชื่อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+      return;
+    }
 
     // Set up inactivity detection on user selection
     resetInactivityTimer();
@@ -310,16 +218,6 @@
     });
 
     await runHeartbeat();
-  }
-
-  function getProblemTitle(problemId: string): string {
-    if (appState.dailyChallenge && appState.dailyChallenge.problems) {
-      const prob = appState.dailyChallenge.problems.find(
-        (p) => p.id === problemId,
-      );
-      if (prob) return prob.title;
-    }
-    return problemId;
   }
 
   async function runHeartbeat() {
@@ -340,62 +238,16 @@
     }
 
     try {
-      // Send our heartbeat and get bundled peer updates in a single call
-      const response: any = await invoke("send_heartbeat", {
+      await invoke("send_heartbeat", {
         status,
         currentProblemId,
       });
-
-      if (response) {
-        const peer = response.peer_status;
-        appState.peerStatus = peer;
-
-        // Check for new solved submissions
-        if (peer && response.peer_submissions) {
-          for (const sub of response.peer_submissions) {
-            if (
-              sub.score === 100 &&
-              !knownPeerSolvedProblems.has(sub.problem_id)
-            ) {
-              knownPeerSolvedProblems.add(sub.problem_id);
-              // Trigger Toast!
-              const problemTitle = getProblemTitle(sub.problem_id);
-              showPeerToast(peer.user_id, problemTitle);
-            }
-          }
-        }
-      }
+      await appState.refreshOnlineUsers();
     } catch (e) {
       console.error("Heartbeat error:", e);
     }
   }
 
-  // Get peer presence class name
-  function getPeerStatusClass(status: string) {
-    switch (status) {
-      case "Online":
-        return "online";
-      case "Solving Problem":
-        return "solving";
-      case "Idle":
-        return "idle";
-      default:
-        return "offline";
-    }
-  }
-
-  // Check if peer is actually offline based on heartbeat timestamp
-  function getComputedPeerStatus(peer: typeof peerStatus) {
-    if (!peer) return "Offline";
-    const lastActive = new Date(peer.last_active);
-    const now = new Date();
-    const diffMs = now.getTime() - lastActive.getTime();
-    if (diffMs > 120000) {
-      // 2 minutes
-      return "Offline";
-    }
-    return peer.status;
-  }
 </script>
 
 <div
@@ -616,7 +468,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
           class="sb-user"
-          onclick={() => (appState.showProfileSelector = true)}
+          onclick={openProfileSelector}
         >
           <div class="avatar">{currentUser}</div>
           <div class="sb-user-info">
@@ -744,33 +596,42 @@
       <h2
         style="text-align: center; margin-bottom: 24px; font-weight: 500; font-size: 15px; letter-spacing: 0.05em; color: var(--text-primary);"
       >
-        เลือกผู้ใช้งาน
+        ใส่ชื่อของคุณ
       </h2>
 
-      <div
-        style="display: flex; gap: 10px; justify-content: center; margin-top: 16px;"
+      <p style="text-align: center; font-size: 12px; color: var(--text-muted); margin: 0 0 16px; line-height: 1.5;">
+        ชื่อนี้จะถูกเก็บไว้ในเครื่องนี้จนกว่าคุณจะเปลี่ยนชื่อ
+      </p>
+
+      <input
+        type="text"
+        bind:value={profileName}
+        maxlength="64"
+        autocomplete="name"
+        placeholder="ชื่อของคุณ"
+        aria-label="ชื่อของคุณ"
+        onkeydown={(event) => event.key === "Enter" && selectProfile()}
+        style="width: 100%; box-sizing: border-box;"
+      />
+
+      {#if profileError}
+        <p style="font-size: 12px; color: var(--accent-error); margin: 8px 0 0;">
+          {profileError}
+        </p>
+      {/if}
+
+      <button
+        class="btn-submit"
+        style="width: 100%; margin-top: 16px; padding: 11px;"
+        onclick={selectProfile}
       >
-        <button
-          class="us-opt"
-          style="flex: 1; padding: 12px;"
-          onclick={() => selectProfile("NG")}
-        >
-          NG
-        </button>
-        <button
-          class="us-opt"
-          style="flex: 1; padding: 12px;"
-          onclick={() => selectProfile("MR3")}
-        >
-          MR3
-        </button>
-      </div>
+        บันทึกชื่อและเริ่มใช้งาน
+      </button>
 
       <p
         style="text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 24px; line-height: 1.5;"
       >
-        เลือกตัวตนของผู้ใช้งานเพื่อโหลดเป้าหมาย บันทึกการส่งโค้ด
-        และซิงค์ข้อมูลกับเพื่อนของคุณ
+        ชื่อของคุณใช้ระบุประวัติการฝึกและการส่งโค้ดบนเครื่องนี้
       </p>
     </div>
   </div>
@@ -789,41 +650,6 @@
     </div>
   </div>
 {/if}
-
-<!-- Real-time Peer Achievements Toast Overlay -->
-<div class="toast-overlay">
-  {#each toasts as toast (toast.id)}
-    <div
-      class="toast-card"
-      in:scale={{ duration: 200, start: 0.95 }}
-      out:fade={{ duration: 150 }}
-    >
-      <div class="toast-icon">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      </div>
-      <div class="toast-body">
-        <div class="toast-title">ผ่านโจทย์แล้ว!</div>
-        <div class="toast-desc">
-          <span class="toast-highlight">{toast.username}</span> ผ่านโจทย์
-          <strong>{toast.problemTitle}</strong> แล้ว
-        </div>
-      </div>
-      <button
-        class="toast-close"
-        onclick={() => (toasts = toasts.filter((t) => t.id !== toast.id))}
-      >
-        &times;
-      </button>
-    </div>
-  {/each}
-</div>
 
 <style>
   .loading-overlay {
@@ -959,95 +785,4 @@
     }
   }
 
-  .toast-overlay {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 10002;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: none;
-  }
-
-  .toast-card {
-    pointer-events: auto;
-    width: 320px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent-success);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    position: relative;
-  }
-
-  .toast-icon {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--accent-success-bg);
-    color: var(--accent-success);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .toast-icon svg {
-    width: 10px;
-    height: 10px;
-  }
-
-  .toast-body {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .toast-title {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent-success);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 2px;
-  }
-
-  .toast-desc {
-    font-size: 12px;
-    color: var(--text-primary);
-    line-height: 1.4;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .toast-desc strong {
-    color: var(--accent-blue);
-  }
-
-  .toast-highlight {
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .toast-close {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.15s;
-  }
-
-  .toast-close:hover {
-    color: var(--text-primary);
-  }
 </style>

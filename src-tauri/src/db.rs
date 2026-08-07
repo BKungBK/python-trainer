@@ -629,13 +629,13 @@ impl DbManager {
         Ok(())
     }
 
-    pub fn get_user_status(&self, user_id: &str) -> Result<Option<UserStatus>> {
+    pub fn get_user_statuses(&self) -> Result<Vec<UserStatus>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT user_id, status, current_problem_id, daily_progress, daily_completed, last_active
-             FROM user_status WHERE user_id = ?",
+             FROM user_status ORDER BY last_active DESC",
         )?;
-        let mut rows = stmt.query_map(params![user_id], |row| {
+        let rows = stmt.query_map([], |row| {
             let completed_int: i32 = row.get(4)?;
             Ok(UserStatus {
                 user_id: row.get(0)?,
@@ -646,11 +646,8 @@ impl DbManager {
                 last_active: row.get(5)?,
             })
         })?;
-        if let Some(res) = rows.next() {
-            Ok(Some(res?))
-        } else {
-            Ok(None)
-        }
+
+        rows.collect()
     }
 
     // ---- Seed ----

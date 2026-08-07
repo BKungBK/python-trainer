@@ -68,12 +68,19 @@ fn detect_python() -> Result<Option<String>, String> {
 
 #[tauri::command]
 fn select_user(state: State<'_, AppState>, user_id: String) -> Result<(), String> {
-    if user_id != "NG" && user_id != "MR3" {
-        return Err("Invalid user identity. Must be 'NG' or 'MR3'.".to_string());
+    let user_name = user_id.trim();
+    if user_name.is_empty() {
+        return Err("Name cannot be empty.".to_string());
+    }
+    if user_name.chars().count() > 64 {
+        return Err("Name must be 64 characters or fewer.".to_string());
+    }
+    if user_name.chars().any(char::is_control) {
+        return Err("Name cannot contain control characters.".to_string());
     }
     state
         .db
-        .set_setting("active_user", &user_id)
+        .set_setting("active_user", user_name)
         .map_err(|e| format!("Failed to save user identity: {}", e))?;
     // Invalidate daily cache when switching users
     *state.daily_cache.lock().unwrap() = None;
@@ -86,6 +93,41 @@ fn get_active_user(state: State<'_, AppState>) -> Result<Option<String>, String>
         .db
         .get_setting("active_user")
         .map_err(|e| format!("Failed to read active user: {}", e))
+}
+
+#[tauri::command]
+fn get_supabase_config(state: State<'_, AppState>) -> Result<(String, String), String> {
+    Ok(state.supabase.get_config())
+}
+
+#[tauri::command]
+async fn get_user_statuses(state: State<'_, AppState>) -> Result<Vec<UserStatus>, String> {
+    if state.supabase.is_configured() {
+        match state.supabase.fetch_user_statuses().await {
+            Ok(statuses) => {
+                let statuses: Vec<UserStatus> = statuses
+                    .into_iter()
+                    .filter(|status| status.user_id != "NG" && status.user_id != "MR3")
+                    .collect();
+                for status in &statuses {
+                    let _ = state.db.save_user_status(status);
+                }
+                return Ok(statuses);
+            }
+            Err(error) => {
+                eprintln!("Failed to fetch Supabase user statuses: {}", error);
+            }
+        }
+    }
+
+    let statuses = state
+        .db
+        .get_user_statuses()
+        .map_err(|e| format!("Failed to read cached user statuses: {}", e))?;
+    Ok(statuses
+        .into_iter()
+        .filter(|status| status.user_id != "NG" && status.user_id != "MR3")
+        .collect())
 }
 
 #[tauri::command]
@@ -152,22 +194,6 @@ fn get_submissions(
         .db
         .get_submissions_with_problems(&user_id)
         .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn get_peer_submissions(state: State<'_, AppState>) -> Result<Vec<Submission>, String> {
-    let user_id = state
-        .db
-        .get_setting("active_user")
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "No active user".to_string())?;
-    let peer_id = if user_id == "NG" { "MR3" } else { "NG" };
-    state.supabase.fetch_user_submissions(peer_id).await
-}
-
-#[tauri::command]
-fn get_supabase_config(state: State<'_, AppState>) -> Result<(String, String), String> {
-    Ok(state.supabase.get_config())
 }
 
 #[tauri::command]
@@ -613,19 +639,12 @@ async fn perform_heartbeat_inner(
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeartbeatResponse {
-    pub peer_status: Option<UserStatus>,
-    pub peer_submissions: Vec<Submission>,
-}
-
 #[tauri::command]
 async fn send_heartbeat(
     state: State<'_, AppState>,
     status: String,
     current_problem_id: Option<String>,
-) -> Result<HeartbeatResponse, String> {
-    // 1. Send our heartbeat
+) -> Result<(), String> {
     perform_heartbeat_inner(
         &state.db,
         &state.supabase,
@@ -634,55 +653,7 @@ async fn send_heartbeat(
         current_problem_id,
     )
     .await?;
-
-    // 2. Fetch active user & peer ID
-    let user_id = state
-        .db
-        .get_setting("active_user")
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "No active user".to_string())?;
-    let peer_id = if user_id == "NG" { "MR3" } else { "NG" };
-
-    // 3. Fetch peer status (using the same logic as get_peer_status)
-    let peer_status = if let Ok(Some(status)) = state.supabase.fetch_peer_status(peer_id).await {
-        let _ = state.db.save_user_status(&status);
-        Some(status)
-    } else {
-        state.db.get_user_status(peer_id).unwrap_or(None)
-    };
-
-    // 4. Fetch peer submissions
-    let peer_submissions = state
-        .supabase
-        .fetch_user_submissions(peer_id)
-        .await
-        .unwrap_or_default();
-
-    Ok(HeartbeatResponse {
-        peer_status,
-        peer_submissions,
-    })
-}
-
-#[tauri::command]
-async fn get_peer_status(state: State<'_, AppState>) -> Result<Option<UserStatus>, String> {
-    let user_id = state
-        .db
-        .get_setting("active_user")
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "No active user".to_string())?;
-
-    let peer_id = if user_id == "NG" { "MR3" } else { "NG" };
-
-    if let Ok(Some(status)) = state.supabase.fetch_peer_status(peer_id).await {
-        let _ = state.db.save_user_status(&status);
-        return Ok(Some(status));
-    }
-
-    state
-        .db
-        .get_user_status(peer_id)
-        .map_err(|e| format!("Failed to read cached peer status: {}", e))
+    Ok(())
 }
 
 #[tauri::command]
@@ -828,20 +799,19 @@ pub fn run() {
             detect_python,
             select_user,
             get_active_user,
+            get_supabase_config,
+            get_user_statuses,
             sync_from_supabase,
             get_public_test_cases,
             run_sample,
             submit_solution,
             get_daily_challenge,
             send_heartbeat,
-            get_peer_status,
             save_setting,
             get_setting,
             reroll_daily_challenge,
             update_discord_presence,
-            get_submissions,
-            get_peer_submissions,
-            get_supabase_config
+            get_submissions
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
