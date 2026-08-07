@@ -63,6 +63,8 @@ pub struct UserStatus {
     pub daily_progress: String, // JSON string
     pub daily_completed: bool,
     pub last_active: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar_url: Option<String>,
 }
 
 /// DbManager holds a single persistent SQLite connection behind a Mutex.
@@ -138,7 +140,8 @@ impl DbManager {
                 current_problem_id TEXT REFERENCES problems(id) ON DELETE SET NULL,
                 daily_progress TEXT NOT NULL DEFAULT '{}',
                 daily_completed INTEGER NOT NULL DEFAULT 0,
-                last_active TEXT NOT NULL
+                last_active TEXT NOT NULL,
+                avatar_url TEXT
             );
 
             CREATE TABLE IF NOT EXISTS submissions (
@@ -170,6 +173,7 @@ impl DbManager {
             "ALTER TABLE submissions ADD COLUMN synced INTEGER NOT NULL DEFAULT 0",
             [],
         );
+        let _ = conn.execute("ALTER TABLE user_status ADD COLUMN avatar_url TEXT", []);
 
         Ok(())
     }
@@ -615,24 +619,38 @@ impl DbManager {
         let completed_int = if status.daily_completed { 1 } else { 0 };
         conn.execute(
             "INSERT OR REPLACE INTO user_status
-             (user_id, status, current_problem_id, daily_progress, daily_completed, last_active)
-             VALUES (?, ?, ?, ?, ?, ?)",
+             (user_id, status, current_problem_id, daily_progress, daily_completed, last_active, avatar_url)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
             params![
                 status.user_id,
                 status.status,
                 status.current_problem_id,
                 status.daily_progress,
                 completed_int,
-                status.last_active
+                status.last_active,
+                status.avatar_url,
             ],
         )?;
         Ok(())
     }
 
+    pub fn get_user_avatar_url(&self, user_id: &str) -> Result<Option<String>> {
+        let conn = self.conn.lock().unwrap();
+        conn.query_row(
+            "SELECT avatar_url FROM user_status WHERE user_id = ?",
+            params![user_id],
+            |row| row.get(0),
+        )
+        .or_else(|error| match error {
+            rusqlite::Error::QueryReturnedNoRows => Ok(None),
+            other => Err(other),
+        })
+    }
+
     pub fn get_user_statuses(&self) -> Result<Vec<UserStatus>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT user_id, status, current_problem_id, daily_progress, daily_completed, last_active
+            "SELECT user_id, status, current_problem_id, daily_progress, daily_completed, last_active, avatar_url
              FROM user_status ORDER BY last_active DESC",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -644,6 +662,7 @@ impl DbManager {
                 daily_progress: row.get(3)?,
                 daily_completed: completed_int != 0,
                 last_active: row.get(5)?,
+                avatar_url: row.get(6)?,
             })
         })?;
 

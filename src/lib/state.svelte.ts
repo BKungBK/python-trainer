@@ -236,6 +236,22 @@ class AppState {
     }
   }
 
+  async setAvatarUrl(avatarUrl: string | null): Promise<boolean> {
+    try {
+      await invoke("set_avatar_url", { avatarUrl });
+      if (this.currentUser) {
+        this.onlineUsers = this.onlineUsers.map((user) =>
+          user.user_id === this.currentUser ? { ...user, avatar_url: avatarUrl } : user,
+        );
+      }
+      this.triggerRefresh();
+      return true;
+    } catch (e) {
+      console.error("Failed to save avatar:", e);
+      return false;
+    }
+  }
+
   async prefetchDailyChallenge() {
     try {
       const challenge: {

@@ -1,11 +1,11 @@
 {
-    "version":  "1.0.4",
-    "notes":  "Signed Windows release v1.0.4",
-    "pub_date":  "2026-08-07T04:24:46Z",
+    "version":  "1.0.5",
+    "notes":  "Profile avatars, single-name identity, realtime presence, and redesigned profile UI.",
+    "pub_date":  "2026-08-07T11:15:24Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q01iV0xWRjU1RTdTdzFoUWdKUUZMbGczZTYxY3R6QS9RSjNEeEw0WmFnaHhSMmhaRmg1aTBzdVE4RmF5ZTlkRkRYak9HZW04T0E2WWRmQlFwbHVwVHdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MDc4MjQ5CWZpbGU6UHl0aG9uLlRyYWluZXIuQnkuQkt1bmdCS18xLjAuNF94NjQtc2V0dXAuZXhlCm9TTVZMMTR5YUJMbkdOOHdxM0FMVTZuTkQ5RWRVeEhHcmJ4dUtjUXNLRzdOQjlmZTN4aDN0K0xMcktSZXdYUG9xRWhYZ0wxamFETzdWMm1HUXVSb0R3PT0K",
-                                             "url":  "https://github.com/BKungBK/python-trainer/releases/download/v1.0.4/Python.Trainer.By.BKungBK_1.0.4_x64-setup.exe"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q0pjbE9NTlhKMHpuRFF2K2RDUFRYbUwvWXg3UUJsV3dlaGVxM1NNYlBReElwQnduaFhNeWV2RnBwUmlpdkRSd0RhNzk5VTlmbVlGN1l3YVo5OXZvQkFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MTAxMjgxCWZpbGU6UHl0aG9uIFRyYWluZXIgQnkgQkt1bmdCS18xLjAuNV94NjQtc2V0dXAuZXhlCkIweW5MZ0VDanpSUi9VcmdrbWtYKzF2UmhscCtCRDdZMC9TaVVaNTJYdE44WWJVUlRPUjlISEk4dXZ0ZGhyZHdzMVllZjg1Rjd2aWI5ZzdOUWE4aUJ3PT0K",
+                                             "url":  "https://github.com/BKungBK/python-trainer/releases/download/v1.0.5/Python.Trainer.By.BKungBK_1.0.5_x64-setup.exe"
                                          }
                   }
 }

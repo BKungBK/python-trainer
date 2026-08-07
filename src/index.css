@@ -287,6 +287,14 @@ body {
   color: var(--text-secondary);
   font-weight: 500;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .sb-user-info {
@@ -1468,31 +1476,40 @@ input[type="text"]:focus {
 }
 
 .user-presence-section {
+  width: 100%;
   margin-top: 28px;
 }
 
 .section-heading {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .section-kicker {
-  color: var(--accent-blue);
-  font: 11px var(--font-mono);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .section-title {
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 600;
 }
 
 .section-count {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.section-separator {
   color: var(--text-muted);
-  font: 11px var(--font-mono);
+  font-size: 12px;
 }
 
 .user-presence-list {
@@ -1501,58 +1518,418 @@ input[type="text"]:focus {
   gap: 8px;
 }
 
-.user-presence-card {
+.presence-user-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--bg-surface-raised) 0%, var(--bg-card) 100%);
 }
 
-.presence-dot {
-  width: 8px;
-  height: 8px;
+.presence-avatar-wrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
   flex: 0 0 auto;
+}
+
+.presence-avatar {
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
   border-radius: 50%;
-  background: var(--text-muted);
+  color: var(--text-primary);
+  background: linear-gradient(135deg, #4a4a4a, #2f2f2f);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
 }
 
-.presence-dot.online {
-  background: var(--accent-green);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 14%, transparent);
+.presence-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.presence-info {
+.presence-online-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--bg-surface-raised);
+  border-radius: 50%;
+  background: #5a9a5a;
+}
+
+.fc-info {
   min-width: 0;
   flex: 1;
 }
 
-.presence-name {
+.fc-name {
   overflow: hidden;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.presence-status {
-  color: var(--text-muted);
-  font: 11px var(--font-mono);
-  margin-top: 2px;
+.presence-status-badge {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid var(--accent-success-border);
+  border-radius: 8px;
+  color: #8fc79a;
+  background: var(--accent-success-bg);
+  font-size: 12px;
+  line-height: 1;
 }
 
-.presence-you,
-.presence-badge {
+.presence-you {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
   color: var(--accent-blue);
-  font: 10px var(--font-mono);
-  margin-left: 8px;
+  background: var(--accent-blue-bg);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  vertical-align: 1px;
 }
 
-.presence-badge {
-  margin-left: auto;
-  white-space: nowrap;
+/* Profile name modal */
+.profile-modal {
+  position: relative;
+  width: min(360px, calc(100vw - 32px));
+  padding: 30px 28px 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.38);
+  text-align: center;
+}
+
+.profile-overlay {
+  background: var(--bg-overlay);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
+  border-color: var(--border);
+  color: var(--text-primary);
+  background: var(--bg-surface-raised);
+}
+
+.modal-close-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.profile-modal-title {
+  margin: 18px 0 18px;
+  width: 100%;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: normal;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.profile-modal-copy {
+  max-width: 34ch;
+  margin: 0 auto 20px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.profile-name-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 16px;
+  border-color: var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  text-align: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.profile-name-input:focus {
+  border-color: var(--accent-blue);
+  background: var(--bg-body);
+  box-shadow: 0 0 0 1px var(--accent-blue-border);
+  outline: none;
+}
+
+.profile-name-input::placeholder {
+  color: var(--text-muted);
+}
+
+.profile-form-error {
+  margin: 8px 0 0;
+  color: var(--accent-error);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.profile-submit {
+  flex: 1;
+  min-height: 42px;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent-blue-border);
+  border-radius: var(--radius-sm);
+  color: var(--accent-blue);
+  background: var(--accent-blue-bg);
+  font-weight: 600;
+  transition: transform 0.2s var(--ease-out-quart), background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.profile-submit:hover:not(:disabled) {
+  transform: scale(1.04);
+  border-color: var(--accent-blue);
+  background: var(--accent-blue-border);
+  color: var(--text-primary);
+}
+
+.profile-submit:disabled,
+.profile-secondary:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.profile-secondary {
+  flex: 1;
+  min-height: 42px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transition: transform 0.2s var(--ease-out-quart);
+}
+
+.profile-secondary:hover:not(:disabled) {
+  transform: scale(1.04);
+}
+
+.profile-avatar-picker {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  text-align: center;
+}
+
+.profile-avatar-button {
+  position: relative;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  padding: 0;
+  place-items: center;
+  overflow: visible;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  font-size: 24px;
+  transition: color 0.24s ease, transform 0.24s ease;
+}
+
+.profile-avatar-media {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed var(--text-muted);
+  border-radius: 50%;
+  background: var(--bg-base);
+  transition: border-color 0.24s ease, background-color 0.24s ease, color 0.24s ease;
+}
+
+.profile-avatar-button.has-name {
+  color: var(--bg-base);
+  transform: scale(1.04);
+}
+
+.profile-avatar-button.has-name .profile-avatar-media {
+  border-style: solid;
+  border-color: var(--accent-blue-border);
+  background: var(--accent-blue);
+}
+
+.profile-avatar-button:hover {
+  color: var(--text-primary);
+  transform: scale(1.04);
+}
+
+.profile-avatar-button:hover .profile-avatar-media {
+  border-color: var(--accent-blue);
+  background: var(--accent-blue-bg);
+}
+
+.profile-avatar-button.has-name:hover .profile-avatar-media {
+  background: var(--accent-blue);
+}
+
+.profile-avatar-button.has-name:hover {
+  transform: scale(1.07);
+}
+
+.profile-avatar-initial {
+  color: var(--bg-base);
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.profile-avatar-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-edit {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 2px solid var(--bg-card);
+  border-radius: 50%;
+  color: var(--accent-blue);
+  background: var(--accent-blue-bg);
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.profile-avatar-edit svg {
+  width: 12px;
+  height: 12px;
+}
+
+.profile-avatar-button:hover .profile-avatar-edit {
+  transform: scale(1.12);
+}
+
+.profile-avatar-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-avatar-label {
+  color: var(--text-muted);
+  font: 10px var(--font-mono);
+  letter-spacing: 0.1em;
+}
+
+.profile-avatar-action {
+  width: fit-content;
+  color: var(--accent-blue);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.profile-avatar-action:hover {
+  text-decoration: underline;
+}
+
+.profile-avatar-hint {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.profile-avatar-input {
+  display: none;
+}
+
+.profile-avatar-remove {
+  margin-top: 8px;
+  border: 0;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.profile-avatar-remove:hover {
+  color: var(--text-secondary);
+}
+
+.profile-modal-footnote {
+  max-width: 36ch;
+  margin: 18px auto 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .profile-modal {
+    padding: 26px 20px 22px;
+  }
+
+  .profile-avatar-picker {
+    align-items: center;
+  }
+
+  .profile-actions {
+    flex-direction: column-reverse;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

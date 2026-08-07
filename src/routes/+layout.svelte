@@ -13,6 +13,9 @@
 
   // State variables
   let currentUser = $derived(appState.currentUser);
+  let activeAvatarUrl = $derived(
+    appState.onlineUsers.find((user: any) => user.user_id === currentUser)?.avatar_url ?? null,
+  );
   let syncStatus = $derived(appState.syncStatus);
 
   let isMaximized = $state(false);
@@ -20,6 +23,26 @@
   let inactivityTimer: any;
   let presenceClient: any = null;
   let presenceChannel: any = null;
+  let selectedAvatarFile = $state<File | null>(null);
+  let avatarPreviewUrl = $state<string | null>(null);
+  let avatarError = $state<string | null>(null);
+  let profileSaving = $state(false);
+
+  const avatarMimeTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/svg+xml",
+  ]);
+  const avatarExtensions: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+  };
+  const avatarMaxBytes = 5 * 1024 * 1024;
 
   async function setupPresenceRealtime() {
     try {
@@ -188,14 +211,84 @@
 
   let profileName = $state("");
   let profileError = $state<string | null>(null);
+  let profileInput = $state<HTMLInputElement | null>(null);
+  let profileInputFocused = $state(false);
+
+  $effect(() => {
+    if (!appState.showProfileSelector) return;
+
+    requestAnimationFrame(() => profileInput?.focus());
+  });
 
   function openProfileSelector() {
     profileName = currentUser ?? "";
     profileError = null;
+    avatarError = null;
+    selectedAvatarFile = null;
+    avatarPreviewUrl = activeAvatarUrl;
     appState.showProfileSelector = true;
   }
 
-  async function selectProfile() {
+  function resetAvatarSelection() {
+    if (avatarPreviewUrl && avatarPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+    selectedAvatarFile = null;
+    avatarPreviewUrl = activeAvatarUrl;
+    avatarError = null;
+  }
+
+  function handleAvatarFile(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = "";
+    if (!file) return;
+
+    const mimeType = file.type || "";
+    if (!avatarMimeTypes.has(mimeType)) {
+      avatarError = "รองรับเฉพาะ JPG, PNG, WEBP, GIF และ SVG";
+      return;
+    }
+    if (file.size > avatarMaxBytes) {
+      avatarError = "รูปภาพต้องมีขนาดไม่เกิน 5 MB";
+      return;
+    }
+
+    if (avatarPreviewUrl && avatarPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+    selectedAvatarFile = file;
+    avatarPreviewUrl = URL.createObjectURL(file);
+    avatarError = null;
+  }
+
+  async function uploadAvatar(file: File, userName: string): Promise<boolean> {
+    try {
+      const [url, anonKey]: [string, string] = await invoke("get_supabase_config");
+      if (!url || !anonKey) throw new Error("Supabase is not configured");
+
+      const client = presenceClient ?? createClient(url, anonKey);
+      const extension = avatarExtensions[file.type];
+      const path = `${encodeURIComponent(userName)}/${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await client.storage.from("avatars").upload(path, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+
+      const { data } = client.storage.from("avatars").getPublicUrl(path);
+      const saved = await appState.setAvatarUrl(data.publicUrl);
+      if (!saved) throw new Error("Avatar profile could not be saved");
+      return true;
+    } catch (error) {
+      console.error("Avatar upload failed:", error);
+      avatarError = "อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+      return false;
+    }
+  }
+
+  async function selectProfile(includeAvatar = true) {
     const name = profileName.trim();
     if (!name) {
       profileError = "กรุณาใส่ชื่อก่อนดำเนินการต่อ";
@@ -203,11 +296,29 @@
     }
 
     profileError = null;
+    avatarError = null;
+    const previousUser = currentUser;
+    const previousAvatarUrl = activeAvatarUrl;
+    profileSaving = true;
     const saved = await appState.setUserName(name);
     if (!saved) {
       profileError = "บันทึกชื่อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+      profileSaving = false;
       return;
     }
+
+    if (includeAvatar && selectedAvatarFile) {
+      const uploaded = await uploadAvatar(selectedAvatarFile, name);
+      if (!uploaded) {
+        appState.showProfileSelector = true;
+        profileSaving = false;
+        return;
+      }
+    } else if (previousAvatarUrl && previousUser && previousUser !== name) {
+      await appState.setAvatarUrl(previousAvatarUrl);
+    }
+
+    profileSaving = false;
 
     // Set up inactivity detection on user selection
     resetInactivityTimer();
@@ -569,11 +680,13 @@
 
 <!-- Onboarding Profile Selector Modal -->
 {#if appState.showProfileSelector}
-  <div class="modal-overlay" transition:fade={{ duration: 150 }}>
+  <div class="modal-overlay profile-overlay" role="presentation" transition:fade={{ duration: 150 }}>
     <div
-      class="card modal-content"
+      class="card modal-content profile-modal"
       transition:scale={{ duration: 200, start: 0.96 }}
-      style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); position: relative;"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-dialog-title"
     >
       {#if currentUser}
         <button
@@ -593,46 +706,85 @@
         </button>
       {/if}
 
-      <h2
-        style="text-align: center; margin-bottom: 24px; font-weight: 500; font-size: 15px; letter-spacing: 0.05em; color: var(--text-primary);"
-      >
-        ใส่ชื่อของคุณ
-      </h2>
+      <div class="profile-avatar-picker">
+        <button
+          class="profile-avatar-button"
+          class:has-name={!avatarPreviewUrl && profileName.trim().length > 0}
+          type="button"
+          onclick={() => document.getElementById("profile-avatar-file")?.click()}
+          aria-label="เลือกรูปโปรไฟล์"
+        >
+          <span class="profile-avatar-media">
+            {#if avatarPreviewUrl}
+              <img src={avatarPreviewUrl} alt="ตัวอย่างรูปโปรไฟล์" />
+            {:else if profileName.trim()}
+              <span class="profile-avatar-initial" aria-hidden="true">{profileName.trim().charAt(0).toLocaleUpperCase()}</span>
+            {:else}
+              <span aria-hidden="true">?</span>
+            {/if}
+          </span>
+          <span class="profile-avatar-edit" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M10 4v12M4 10h12" stroke-linecap="round" />
+            </svg>
+          </span>
+        </button>
+        <input
+          id="profile-avatar-file"
+          class="profile-avatar-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+          onchange={handleAvatarFile}
+        />
+      </div>
 
-      <p style="text-align: center; font-size: 12px; color: var(--text-muted); margin: 0 0 16px; line-height: 1.5;">
-        ชื่อนี้จะถูกเก็บไว้ในเครื่องนี้จนกว่าคุณจะเปลี่ยนชื่อ
-      </p>
+      <h2 id="profile-dialog-title" class="profile-modal-title">{currentUser ? "แก้ไขโปรไฟล์" : "ยินดีต้อนรับ"}</h2>
 
       <input
+        id="profile-name"
+        class="profile-name-input"
         type="text"
+        bind:this={profileInput}
         bind:value={profileName}
         maxlength="64"
         autocomplete="name"
-        placeholder="ชื่อของคุณ"
+        placeholder={profileInputFocused ? "" : "พิมพ์ชื่อคุณที่นี่"}
         aria-label="ชื่อของคุณ"
-        onkeydown={(event) => event.key === "Enter" && selectProfile()}
-        style="width: 100%; box-sizing: border-box;"
+        onfocus={() => (profileInputFocused = true)}
+        onblur={() => (profileInputFocused = false)}
+        onkeydown={(event) => event.key === "Enter" && selectProfile(true)}
       />
 
       {#if profileError}
-        <p style="font-size: 12px; color: var(--accent-error); margin: 8px 0 0;">
+        <p class="profile-form-error" role="alert">
           {profileError}
         </p>
       {/if}
+      {#if avatarError}
+        <p class="profile-form-error" role="alert">
+          {avatarError}
+        </p>
+      {/if}
 
-      <button
-        class="btn-submit"
-        style="width: 100%; margin-top: 16px; padding: 11px;"
-        onclick={selectProfile}
-      >
-        บันทึกชื่อและเริ่มใช้งาน
-      </button>
+      <div class="profile-actions">
+        <button
+          class="profile-secondary"
+          type="button"
+          disabled={profileSaving}
+          onclick={() => currentUser ? (appState.showProfileSelector = false) : selectProfile(false)}
+        >
+          {currentUser ? "ยกเลิก" : "ไว้ก่อน"}
+        </button>
+        <button
+          class="btn-submit profile-submit"
+          type="button"
+          disabled={profileSaving || !profileName.trim()}
+          onclick={() => selectProfile(true)}
+        >
+          {profileSaving ? "กำลังบันทึก..." : currentUser ? "บันทึก" : "เริ่มเลย"}
+        </button>
+      </div>
 
-      <p
-        style="text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 24px; line-height: 1.5;"
-      >
-        ชื่อของคุณใช้ระบุประวัติการฝึกและการส่งโค้ดบนเครื่องนี้
-      </p>
     </div>
   </div>
 {/if}
@@ -743,15 +895,25 @@
     box-shadow: var(--modal-shadow);
   }
 
+  .profile-modal {
+    position: relative;
+    width: min(360px, calc(100vw - 32px));
+    max-width: none;
+    padding: 30px 28px 26px;
+    text-align: center;
+  }
+
   .modal-close-btn {
     position: absolute;
     top: 12px;
     right: 12px;
-    background: transparent;
-    border: none;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid transparent;
     color: var(--text-muted);
+    background: transparent;
     cursor: pointer;
-    padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;

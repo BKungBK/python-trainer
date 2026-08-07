@@ -131,6 +131,53 @@ async fn get_user_statuses(state: State<'_, AppState>) -> Result<Vec<UserStatus>
 }
 
 #[tauri::command]
+async fn set_avatar_url(
+    state: State<'_, AppState>,
+    avatar_url: Option<String>,
+) -> Result<(), String> {
+    if let Some(ref url) = avatar_url {
+        if url.len() > 2048 || !url.starts_with("https://") {
+            return Err("Avatar URL is invalid.".to_string());
+        }
+    }
+
+    let user_id = state
+        .db
+        .get_setting("active_user")
+        .map_err(|e| format!("Failed to read active user: {}", e))?
+        .ok_or_else(|| "No active user".to_string())?;
+
+    let mut user_status = state
+        .db
+        .get_user_statuses()
+        .map_err(|e| format!("Failed to read user status: {}", e))?
+        .into_iter()
+        .find(|status| status.user_id == user_id)
+        .unwrap_or(UserStatus {
+            user_id: user_id.clone(),
+            status: "Online".to_string(),
+            current_problem_id: None,
+            daily_progress: "{}".to_string(),
+            daily_completed: false,
+            last_active: chrono::Utc::now().to_rfc3339(),
+            avatar_url: None,
+        });
+
+    user_status.avatar_url = avatar_url;
+    state
+        .db
+        .save_user_status(&user_status)
+        .map_err(|e| format!("Failed to save avatar: {}", e))?;
+    state
+        .supabase
+        .update_status(&user_status)
+        .await
+        .map_err(|e| format!("Failed to sync avatar: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
 async fn sync_from_supabase(state: State<'_, AppState>) -> Result<(), String> {
     let result = state.supabase.pull_and_sync_problems(&state.db).await;
     // Invalidate daily cache after sync so fresh data is used
@@ -631,6 +678,7 @@ async fn perform_heartbeat_inner(
         daily_progress: progress_json,
         daily_completed,
         last_active: chrono::Utc::now().to_rfc3339(),
+        avatar_url: db.get_user_avatar_url(&user_id).unwrap_or(None),
     };
 
     let _ = db.save_user_status(&user_stat);
@@ -801,6 +849,7 @@ pub fn run() {
             get_active_user,
             get_supabase_config,
             get_user_statuses,
+            set_avatar_url,
             sync_from_supabase,
             get_public_test_cases,
             run_sample,

@@ -9,16 +9,12 @@
   let dailyRequired = $state<number>(0);
   let loading = $state(true);
   let onlineUsers = $derived(appState.onlineUsers);
+  let visibleOnlineUsers = $derived(onlineUsers.filter((user) => isUserOnline(user)));
 
   function isUserOnline(user: any) {
     if (user.status === "Offline") return false;
     const lastActive = Date.parse(user.last_active ?? "");
     return Number.isFinite(lastActive) && Date.now() - lastActive <= 45_000;
-  }
-
-  function displayUserStatus(user: any) {
-    if (!isUserOnline(user)) return "Offline";
-    return user.status || "Online";
   }
 
   // Format today's date
@@ -127,28 +123,33 @@
       </div>
     </div>
 
-    {#if onlineUsers.length > 0}
+    {#if visibleOnlineUsers.length > 0}
       <section class="user-presence-section" aria-label="ผู้ใช้งาน">
         <div class="section-heading">
           <span class="section-kicker">PRESENCE</span>
-          <span class="section-title">ผู้ใช้งาน</span>
-          <span class="section-count">{onlineUsers.length}</span>
+          <span class="section-separator" aria-hidden="true">-</span>
+          <span class="section-count" aria-label="online users">{visibleOnlineUsers.length}</span>
         </div>
         <div class="user-presence-list">
-          {#each onlineUsers as user (user.user_id)}
-            {@const online = isUserOnline(user)}
-            <div class="user-presence-card">
-              <span class="presence-dot" class:online></span>
-              <div class="presence-info">
-                <div class="presence-name">
+          {#each visibleOnlineUsers as user (user.user_id)}
+            <div class="presence-user-row">
+              <div class="presence-avatar-wrap">
+                <div class="avatar presence-avatar" aria-hidden="true">
+                  {#if user.avatar_url}
+                    <img src={user.avatar_url} alt="" loading="lazy" />
+                  {:else}
+                    {user.user_id.slice(0, 2).toUpperCase()}
+                  {/if}
+                </div>
+                <span class="presence-online-dot" aria-label="Online"></span>
+              </div>
+              <div class="fc-info">
+                <div class="fc-name">
                   {user.user_id}
                   {#if user.user_id === activeUser}<span class="presence-you">คุณ</span>{/if}
                 </div>
-                <div class="presence-status">{displayUserStatus(user)}</div>
               </div>
-              {#if user.daily_completed}
-                <span class="presence-badge">DAILY ✓</span>
-              {/if}
+              <span class="presence-status-badge">Online</span>
             </div>
           {/each}
         </div>
