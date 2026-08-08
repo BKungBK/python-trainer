@@ -1,21 +1,69 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { invoke as tauriInvoke } from "@tauri-apps/api/core";
-  import Confetti from "$lib/components/Confetti.svelte";
-  import ProgressBar from "$lib/components/ProgressBar.svelte";
-  import { appState } from "$lib/state.svelte";
   import { goto } from "$app/navigation";
-  import { particleButton } from "$lib/actions/particleButton";
+  import { invoke as tauriInvoke } from "@tauri-apps/api/core";
+  import { appState } from "$lib/state.svelte";
+  import ProgressBar from "$lib/components/ProgressBar.svelte";
 
+  type Progress = { completed: number; required: number };
+  type Problem = { id: string; title: string; category: string };
+  type Challenge = {
+    problems: Problem[];
+    category_progress: Record<string, Progress>;
+    solved_problem_ids: string[];
+  };
 
-  // Fallback mock invoke when running outside Tauri context
-  async function invoke(cmd: string, args: any = {}): Promise<any> {
+  const categoryTranslations: Record<string, string> = {
+    "Input / Output": "ข้อมูลเข้า / ข้อมูลออก (Input / Output)",
+    Conditions: "เงื่อนไข (Conditions)",
+    Loops: "การวนซ้ำ (Loops)",
+    Functions: "ฟังก์ชัน (Functions)",
+    Lists: "ลิสต์ / อาร์เรย์ (Lists)",
+    Implementation: "การใช้งานจริง (Implementation)",
+    Math: "คณิตศาสตร์ (Math)",
+    String: "การจัดการข้อความ (String)",
+    Sorting: "การเรียงลำดับ (Sorting)",
+    Searching: "การค้นหาข้อมูล (Searching)",
+    Greedy: "ขั้นตอนวิธีแบบโลภ (Greedy)",
+    Recursion: "การเรียกซ้ำ (Recursion)",
+    "Data Structures": "โครงสร้างข้อมูล (Data Structures)",
+    Graph: "กราฟ (Graph)",
+    "Dynamic Programming": "การโปรแกรมพลวัต (Dynamic Programming)",
+    "Matrix Operations": "การดำเนินการเมทริกซ์ (Matrix Operations)",
+    "Numerical Methods": "ระเบียบวิธีเชิงตัวเลข (Numerical Methods)",
+    Simulation: "การจำลองสถานการณ์ (Simulation)",
+    Optimization: "การเพิ่มประสิทธิภาพ (Optimization)",
+    "Data Parsing": "การแจกแจงข้อมูล (Data Parsing)",
+    Statistics: "สถิติ (Statistics)",
+    "Signal Processing": "การประมวลผลสัญญาณ (Signal Processing)",
+    "Teacher Problems": "โจทย์อาจารย์ (Teacher Problems)",
+  };
+
+  const teacherTags = [
+    "เงื่อนไข",
+    "การวนซ้ำ",
+    "ฟังก์ชัน",
+    "ลิสต์",
+    "คณิตศาสตร์",
+    "String",
+    "Sorting",
+    "Searching",
+    "Graph",
+    "DP",
+    "Recursion",
+    "Greedy",
+    "Data Structures",
+    "Simulation",
+    "Statistics",
+  ];
+  const PREVIEW_COUNT = 8;
+
+  async function invoke(cmd: string, args: Record<string, unknown> = {}) {
     try {
       if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
         return await tauriInvoke(cmd, args);
       }
-    } catch (e) {
-      console.warn("Tauri invoke failed, using mock data fallback", e);
+    } catch (error) {
+      console.warn(`Tauri invoke failed for ${cmd}`, error);
     }
 
     if (cmd === "get_daily_challenge") {
@@ -24,155 +72,126 @@
           {
             id: "circle_area",
             title: "หาพื้นที่วงกลม",
-            description: "จงเขียนโปรแกรมคำนวณพื้นที่วงกลมจากรัศมี r ที่กำหนดให้\nสูตร: Area = pi * r^2 โดยที่ pi = 3.14159",
             category: "Input / Output",
-            input_specification: "บรรทัดแรกระบุทศนิยม r แทนรัศมีของวงกลม (0 <= r <= 1000)",
-            output_specification: "แสดงพื้นที่วงกลมเป็นทศนิยม 2 ตำแหน่ง",
           },
           {
             id: "even_odd",
             title: "เลขคู่หรือเลขคี่",
-            description: "รับจำนวนเต็ม x แล้วตรวจสอบว่าเป็นเลขคู่หรือเลขคี่",
             category: "Conditions",
-            input_specification: "จำนวนเต็ม x (-10^9 <= x <= 10^9)",
-            output_specification: "แสดงคำว่า 'Even' หากเป็นเลขคู่ หรือ 'Odd' หากเป็นเลขคี่",
-          }
+          },
         ],
         category_progress: {
           "Input / Output": { completed: 1, required: 1 },
-          "Conditions": { completed: 0, required: 1 },
+          Conditions: { completed: 0, required: 1 },
         },
-        solved_problem_ids: ["circle_area"]
-      };
+        solved_problem_ids: ["circle_area"],
+      } satisfies Challenge;
     }
+
+    if (cmd === "get_problem_catalog") {
+      return [];
+    }
+
+    if (cmd === "get_submissions") {
+      return [];
+    }
+
     return null;
   }
 
-  // Daily Challenge data — initialize from cache immediately to avoid loading flash
-  let problems = $state<any[]>(appState.dailyChallenge?.problems ?? []);
-  let categoryProgress = $state<Record<string, { completed: number; required: number }>>(
-    appState.dailyChallenge?.category_progress ?? {}
+  let problems = $state<Problem[]>(appState.dailyChallenge?.problems ?? []);
+  let problemCatalog = $state<Problem[]>([]);
+  let categoryProgress = $state<Record<string, Progress>>(
+    appState.dailyChallenge?.category_progress ?? {},
   );
   let solvedProblemIds = $state<string[]>(appState.dailyChallenge?.solved_problem_ids ?? []);
   let loading = $state(appState.dailyChallenge === null);
-
-  // Confetti trigger binding
-  let triggerScreenConfetti = $state<(x?: number, y?: number) => void>(() => {});
-
-  let challengeLoaderMessage = $state("กำลังโหลดเป้าหมายการฝึกฝนของวันนี้...");
-  const challengeMessages = [
-    "กำลังวิเคราะห์โครงสร้างข้อมูลท้าทายประจำวัน...",
-    "กำลังประมวลผลชุดโจทย์วิเคราะห์ภาษา Python...",
-    "กำลังโหลดคะแนนสถิติประจำวันและความคืบหน้า..."
-  ];
-
-  function selectRandomLoaderMessage() {
-    challengeLoaderMessage = challengeMessages[Math.floor(Math.random() * challengeMessages.length)];
-  }
-
-  // Category translation map
-  const categoryTranslations: Record<string, string> = {
-    "Input / Output": "ข้อมูลเข้า / ข้อมูลออก (Input / Output)",
-    "Conditions": "เงื่อนไข (Conditions)",
-    "Loops": "การวนซ้ำ (Loops)",
-    "Functions": "ฟังก์ชัน (Functions)",
-    "Lists": "ลิสต์ / อาร์เรย์ (Lists)",
-    "Implementation": "การใช้งานจริง (Implementation)",
-    "Math": "คณิตศาสตร์ (Math)",
-    "String": "การจัดการข้อความ (String)",
-    "Sorting": "การเรียงลำดับ (Sorting)",
-    "Searching": "การค้นหาข้อมูล (Searching)",
-    "Greedy": "ขั้นตอนวิธีแบบโลภ (Greedy)",
-    "Recursion": "การเรียกซ้ำ (Recursion)",
-    "Data Structures": "โครงสร้างข้อมูล (Data Structures)",
-    "Graph": "กราฟ (Graph)",
-    "Dynamic Programming": "การโปรแกรมพลวัต (Dynamic Programming)",
-    "Matrix Operations": "การดำเนินการเมทริกซ์ (Matrix Operations)",
-    "Numerical Methods": "ระเบียบวิธีเชิงตัวเลข (Numerical Methods)",
-    "Simulation": "การจำลองสถานการณ์ (Simulation)",
-    "Optimization": "การเพิ่มประสิทธิภาพ (Optimization)",
-    "Data Parsing": "การแจกแจงข้อมูล (Data Parsing)",
-    "Statistics": "สถิติ (Statistics)",
-    "Signal Processing": "การประมวลผลสัญญาณ (Signal Processing)"
-  };
-
   let errorMsg = $state<string | null>(null);
-
-  // Summary counts
-  let totalCompleted = $derived(
-    Object.values(categoryProgress).reduce((acc, curr) => acc + curr.completed, 0)
-  );
-  let totalRequired = $derived(
-    Object.values(categoryProgress).reduce((acc, curr) => acc + curr.required, 0)
-  );
-
-  // Derived sorted checklist: uncompleted categories first, completed categories last
-  let sortedChecklist = $derived(
-    Object.entries(categoryProgress).sort((a, b) => {
-      const isDoneA = a[1].completed >= a[1].required;
-      const isDoneB = b[1].completed >= b[1].required;
-      if (isDoneA && !isDoneB) return 1;
-      if (!isDoneA && isDoneB) return -1;
-      return 0; // maintain original order
-    })
-  );
-
-  // Derived sorted problems:
-  // 1. Unsolved problems from uncompleted categories
-  // 2. Solved problems from uncompleted categories
-  // 3. Unsolved problems from completed categories
-  // 4. Solved problems from completed categories
-  let sortedProblems = $derived(
-    [...problems].sort((a, b) => {
-      const isSolvedA = solvedProblemIds.includes(a.id);
-      const isSolvedB = solvedProblemIds.includes(b.id);
-      
-      const progA = categoryProgress[a.category];
-      const progB = categoryProgress[b.category];
-      const isCatDoneA = progA ? progA.completed >= progA.required : false;
-      const isCatDoneB = progB ? progB.completed >= progB.required : false;
-
-      // 1. Sort by category completion status (uncompleted categories go first)
-      if (isCatDoneA && !isCatDoneB) return 1;
-      if (!isCatDoneA && isCatDoneB) return -1;
-
-      // 2. Sort by problem solved status (unsolved problems go first)
-      if (isSolvedA && !isSolvedB) return 1;
-      if (!isSolvedA && isSolvedB) return -1;
-
-      return 0;
-    })
-  );
+  let teacherExpanded = $state(false);
+  let loadedKey = $state("");
 
   let activeUser = $derived(appState.currentUser);
+  let totalCompleted = $derived(
+    Object.values(categoryProgress).reduce((total, progress) => total + progress.completed, 0),
+  );
+  let totalRequired = $derived(
+    Object.values(categoryProgress).reduce((total, progress) => total + progress.required, 0),
+  );
+  let solvedSet = $derived(new Set(solvedProblemIds));
+  let teacherProblems = $derived(
+    problemCatalog.filter((problem) => problem.category === "Teacher Problems"),
+  );
+  let teacherSolvedCount = $derived(
+    teacherProblems.filter((problem) => solvedSet.has(problem.id)).length,
+  );
+  let sortedProblems = $derived(
+    [...problems].sort((a, b) => {
+      const solvedA = solvedSet.has(a.id);
+      const solvedB = solvedSet.has(b.id);
+      if (solvedA !== solvedB) return solvedA ? 1 : -1;
+
+      const progressA = categoryProgress[a.category];
+      const progressB = categoryProgress[b.category];
+      const categoryDoneA = progressA ? progressA.completed >= progressA.required : false;
+      const categoryDoneB = progressB ? progressB.completed >= progressB.required : false;
+      if (categoryDoneA !== categoryDoneB) return categoryDoneA ? 1 : -1;
+      return 0;
+    }),
+  );
+  let unsolvedProblems = $derived(sortedProblems.filter((problem) => !solvedSet.has(problem.id)));
+  let solvedProblems = $derived(sortedProblems.filter((problem) => solvedSet.has(problem.id)));
 
   $effect(() => {
-    if (activeUser) {
-      const _ = appState.needsRefresh;
-      // Use cache if already loaded, otherwise fetch
-      if (appState.dailyChallenge) {
-        problems = appState.dailyChallenge.problems;
-        categoryProgress = appState.dailyChallenge.category_progress;
-        solvedProblemIds = appState.dailyChallenge.solved_problem_ids || [];
-        loading = false;
-      } else {
-        loadDailyChallenge();
-      }
-    }
+    const user = activeUser;
+    const refresh = appState.needsRefresh;
+    if (!user) return;
+
+    const key = `${user}:${refresh}`;
+    if (key === loadedKey) return;
+    loadedKey = key;
+    loadDailyChallenge();
   });
 
   async function loadDailyChallenge() {
     loading = true;
-    selectRandomLoaderMessage();
+    errorMsg = null;
+
     try {
       await appState.prefetchDailyChallenge();
-      if (appState.dailyChallenge) {
-        problems = appState.dailyChallenge.problems;
-        categoryProgress = appState.dailyChallenge.category_progress;
-        solvedProblemIds = appState.dailyChallenge.solved_problem_ids || [];
+
+      const [catalogResult, submissionsResult] = await Promise.allSettled([
+        invoke("get_problem_catalog"),
+        invoke("get_submissions", { userId: appState.currentUser }),
+      ]);
+      const challenge = appState.dailyChallenge as Challenge | null;
+
+      if (!challenge) {
+        throw new Error("Daily challenge unavailable");
       }
-    } catch (e) {
-      console.error("Failed to load daily challenge:", e);
+
+      problems = challenge.problems ?? [];
+      categoryProgress = challenge.category_progress ?? {};
+
+      const catalog =
+        catalogResult.status === "fulfilled" && Array.isArray(catalogResult.value)
+          ? catalogResult.value
+          : [];
+      problemCatalog = catalog.length > 0 ? catalog : problems;
+
+      const submissions =
+        submissionsResult.status === "fulfilled" && Array.isArray(submissionsResult.value)
+          ? submissionsResult.value
+          : [];
+      const acceptedProblemIds = submissions
+        .filter((submission: any) => Number(submission.score) >= 100)
+        .map((submission: any) => submission.problem_id)
+        .filter(Boolean);
+
+      solvedProblemIds = [
+        ...new Set([...(challenge.solved_problem_ids ?? []), ...acceptedProblemIds]),
+      ];
+    } catch (error) {
+      console.error("Failed to load problem list:", error);
       errorMsg = "โปรดซิงค์ข้อมูลกับ Supabase ในหน้าตั้งค่าเพื่อเริ่มต้นเป้าหมายประจำวัน";
     } finally {
       loading = false;
@@ -180,146 +199,685 @@
   }
 
   function startRandomPractice() {
-    // Find all unsolved problems
-    const unsolved = problems.filter(p => !solvedProblemIds.includes(p.id));
-    if (unsolved.length > 0) {
-      const randomProb = unsolved[Math.floor(Math.random() * unsolved.length)];
-      goto(`/daily?problem=${randomProb.id}`);
-      return;
-    }
-    
-    // Fallback: select a random problem overall
-    if (problems.length > 0) {
-      const randomProb = problems[Math.floor(Math.random() * problems.length)];
-      goto(`/daily?problem=${randomProb.id}`);
-    }
+    const unsolved = problems.filter((problem) => !solvedSet.has(problem.id));
+    const pool = unsolved.length > 0 ? unsolved : problems;
+    const randomProblem = pool[Math.floor(Math.random() * pool.length)];
+    if (randomProblem) openProblem(randomProblem.id);
   }
 
-  function openProblem(probId: string) {
-    goto(`/daily?problem=${probId}`);
+  function openProblem(problemId: string) {
+    goto(`/daily?problem=${encodeURIComponent(problemId)}`);
+  }
+
+  function problemCategory(problem: Problem) {
+    return categoryTranslations[problem.category] || problem.category;
+  }
+
+  function teacherTag(index: number) {
+    return teacherTags[index % teacherTags.length];
   }
 </script>
 
 {#if loading}
-  <div style="padding: 32px; text-align: center; color: var(--text-muted);">
-    {challengeLoaderMessage}
+  <div class="list-empty-state">
+    <div class="list-loading-mark" aria-hidden="true"></div>
+    <span>กำลังโหลดรายการโจทย์...</span>
   </div>
-{:else if problems.length === 0}
-  <div class="screen" style="align-items: center; justify-content: center; gap: 16px; min-height: 100%;">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--text-muted);">
+{:else if errorMsg}
+  <div class="list-empty-state">
+    <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
       <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
     </svg>
-    <span style="font-weight: 500; font-size: 14px;">ไม่มีโจทย์อยู่ในแคชท้องถิ่น</span>
-    <p style="color: var(--text-muted); max-width: 400px; text-align: center; font-size: 13px; line-height: 1.6;">
-      โปรดไปที่หน้า "ตั้งค่า" และกดซิงค์ฐานข้อมูลเพื่อดึงโจทย์การเขียนโค้ดลงมาจาก Supabase
-    </p>
-    <a href="/settings" style="margin-top: 8px;">
-      <button class="btn-run" style="padding: 10px 20px;">ไปที่หน้าตั้งค่า</button>
-    </a>
+    <span>{errorMsg}</span>
+    <a class="btn-run" href="/settings">ไปที่หน้าตั้งค่า</a>
+  </div>
+{:else if problems.length === 0}
+  <div class="list-empty-state">
+    <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+    <span>ไม่มีโจทย์อยู่ในแคชท้องถิ่น</span>
+    <p>โปรดไปที่หน้า “ตั้งค่า” และกดซิงค์ฐานข้อมูลเพื่อดึงโจทย์ลงมา</p>
+    <a class="btn-run" href="/settings">ไปที่หน้าตั้งค่า</a>
   </div>
 {:else}
-  <div class="screen checklist-fade-in">
-    <header class="pg-header" style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+  <div class="screen list-screen">
+    <header class="page-header">
       <div>
-        <h1 class="pg-title">ความท้าทายประจำวัน</h1>
-        <p class="pg-sub">ทำโจทย์ให้ครบทุกหมวดหมู่เพื่อจบเซสชันของวันนี้</p>
+        <h1 class="page-title">ความท้าทายประจำวัน</h1>
+        <p class="page-subtitle">ทำโจทย์ให้ครบทุกหมวดหมู่เพื่อจบเซสชันของวันนี้</p>
       </div>
-      <button 
-        use:particleButton
-        class="btn-submit" 
-        style="padding: 8px 16px; border-radius: var(--radius-sm); font-size: 12px; display: flex; align-items: center; gap: 8px;"
-        onclick={startRandomPractice}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 14px; height: 14px;">
-          <polygon points="5 3 19 12 5 21 5 3"/>
+      <button class="btn-submit list-action" type="button" onclick={startRandomPractice}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <polygon points="5 3 19 12 5 21 5 3" />
         </svg>
         <span>เริ่มฝึกฝนทันที (สุ่มโจทย์)</span>
       </button>
     </header>
 
-    <div>
-      <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
-        <div style="flex: 1;">
-          <ProgressBar value={totalCompleted} max={totalRequired} />
-        </div>
-        <div class="progress-text">เสร็จสิ้นแล้ว {totalCompleted} / {totalRequired} ข้อ</div>
-      </div>
-
-      {#if totalCompleted === totalRequired && totalRequired > 0}
-        <div class="card checklist-fade-in" style="background: var(--accent-success-bg); border: 1px solid var(--accent-success-border); display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; position: relative; overflow: hidden; border-radius: var(--radius-md);">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="status-dot online" style="width: 6px; height: 6px;"></div>
-            <span style="font-size: 13px; font-weight: 600; color: var(--accent-success);">ภารกิจการฝึกฝนของวันนี้สำเร็จแล้ว!</span>
-          </div>
-          <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; max-width: 65ch; margin: 0;">
-            คุณได้พิชิตโจทย์ภาษา Python ครบตามโควตาในวันนี้ ขอปรบมือให้ในวินัยและความสม่ำเสมอในการพัฒนาตนเอง!
-          </p>
-          <button 
-            class="btn-run" 
-            style="width: fit-content; padding: 4px 10px; margin-top: 4px; border-color: var(--accent-success-border); background: var(--bg-card); color: var(--accent-success); font-size: 11px;" 
-            onclick={() => triggerScreenConfetti()}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 10px; height: 10px; color: inherit;">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    <section class="teacher-featured" class:expanded={teacherExpanded} aria-labelledby="teacher-title">
+      <div class="featured-head">
+        <div class="featured-headline">
+          <div class="featured-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 10 12 5 2 10l10 5 10-5Z" />
+              <path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5" />
             </svg>
-            <span>ฉลองความสำเร็จ</span>
-          </button>
+          </div>
+          <div>
+            <h2 id="teacher-title" class="featured-title">โจทย์อาจารย์</h2>
+            <p class="featured-subtitle">คลังโจทย์ทั้งหมดที่อาจารย์กำหนด</p>
+          </div>
         </div>
-      {/if}
+        <span class="featured-count">{teacherSolvedCount} / {teacherProblems.length} ข้อ</span>
+      </div>
 
-      <div class="checklist">
-        {#each sortedChecklist as [cat, progress]}
-          {@const isDone = progress.completed >= progress.required}
-          <div class="check-row" class:done={isDone}>
-            <div class="check-icon" class:checked={isDone}>
-              {#if isDone}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              {/if}
-            </div>
-            <div class="check-label">{categoryTranslations[cat] || cat}</div>
-            <div 
-              class="check-count" 
-              class:partial={progress.completed > 0 && !isDone}
-              class:none={progress.completed === 0 && !isDone}
+      {#if teacherProblems.length > 0}
+        <div class="featured-grid">
+          {#each teacherProblems as problem, index (problem.id)}
+            <button
+              class="teacher-card"
+              class:solved={solvedSet.has(problem.id)}
+              class:extra={index >= PREVIEW_COUNT}
+              type="button"
+              onclick={() => openProblem(problem.id)}
+              aria-label={`เปิดโจทย์อาจารย์ ${problem.title}`}
             >
-              {progress.completed} / {progress.required}
-            </div>
-          </div>
-        {/each}
+              <span class="teacher-num">#{String(index + 1).padStart(2, "0")}</span>
+              <span class="teacher-title">{problem.title}</span>
+              <span class="teacher-tag">{teacherTag(index)}</span>
+              {#if solvedSet.has(problem.id)}
+                <span class="teacher-check">✓ แก้ไขแล้ว</span>
+              {/if}
+            </button>
+          {/each}
+        </div>
+        <button class="featured-toggle" type="button" onclick={() => (teacherExpanded = !teacherExpanded)} aria-expanded={teacherExpanded}>
+          <span>{teacherExpanded ? "ย่อรายการ" : `ดูโจทย์อาจารย์ทั้งหมด (${teacherProblems.length} ข้อ)`}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      {:else}
+        <p class="catalog-empty">ยังไม่มีโจทย์อาจารย์ใน catalog โปรดซิงค์ข้อมูลจากหน้าตั้งค่า</p>
+      {/if}
+    </section>
+
+    <div class="progress-line">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label">ความคืบหน้าวันนี้</div>
+        <!-- Keep the existing animated ProgressBar effect. -->
+        <ProgressBar value={totalCompleted} max={totalRequired} />
       </div>
+      <div class="progress-text">เสร็จสิ้นแล้ว {totalCompleted} / {totalRequired} ข้อ</div>
     </div>
 
-    <!-- Problem Browser Grid -->
-    <div>
-      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.04em; text-transform: uppercase;">
-        ชุดโจทย์ปัญหาของวันนี้
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
-        {#each sortedProblems as prob}
-          {@const isSolved = solvedProblemIds.includes(prob.id)}
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div 
-            class="card" 
-            style="cursor: pointer; display: flex; flex-direction: column; gap: 6px; border-color: {isSolved ? 'var(--accent-success-border)' : 'var(--bg-surface-raised)'}; transition: border-color 0.15s;"
-            onclick={() => openProblem(prob.id)}
-          >
-            <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px;">
-              <span style="font-size: 13px; font-weight: 500; color: {isSolved ? 'var(--accent-success)' : 'var(--text-primary)'};">
-                {prob.title}
-              </span>
-              {#if isSolved}
-                <span style="font-size: 11px; color: var(--accent-success); font-weight: 500;">✓ แก้ไขแล้ว</span>
-              {/if}
+    <section class="daily-problems-section" aria-labelledby="daily-problems-title">
+      <h2 id="daily-problems-title" class="section-label">ชุดโจทย์ปัญหาของวันนี้</h2>
+      <div class="problem-groups">
+        {#if unsolvedProblems.length > 0}
+          <div class="problem-group">
+            <div class="problem-group-head">
+              <span class="problem-group-title">ยังไม่ทำ</span>
+              <span class="problem-group-count">{unsolvedProblems.length} ข้อ</span>
             </div>
-            <span style="font-size: 11px; color: var(--text-muted);">{categoryTranslations[prob.category] || prob.category}</span>
+            <div class="problem-grid">
+              {#each unsolvedProblems as problem (problem.id)}
+                <button class="problem-card" type="button" onclick={() => openProblem(problem.id)} aria-label={`เปิดโจทย์ ${problem.title}`}>
+                  <span class="problem-card-head">
+                    <span class="problem-card-status"><span class="problem-status-dot"></span>ยังไม่ทำ</span>
+                    <svg class="problem-card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </span>
+                  <span class="problem-card-title">{problem.title}</span>
+                  <span class="problem-card-footer">
+                    <span class="problem-card-category">{problemCategory(problem)}</span>
+                    <span class="problem-card-action">เปิดโจทย์ <span aria-hidden="true">→</span></span>
+                  </span>
+                </button>
+              {/each}
+            </div>
           </div>
-        {/each}
+        {/if}
+
+        {#if solvedProblems.length > 0}
+          <div class="problem-group problem-group-solved">
+            <div class="problem-group-head">
+              <span class="problem-group-title">ทำแล้ว</span>
+              <span class="problem-group-count">{solvedProblems.length} ข้อ</span>
+            </div>
+            <div class="problem-grid">
+              {#each solvedProblems as problem (problem.id)}
+                <button class="problem-card problem-card-solved" type="button" onclick={() => openProblem(problem.id)} aria-label={`เปิดโจทย์ที่ทำแล้ว ${problem.title}`}>
+                  <span class="problem-card-head">
+                    <span class="problem-card-status"><span class="problem-status-dot problem-status-dot-solved">✓</span>แก้ไขแล้ว</span>
+                    <svg class="problem-card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </span>
+                  <span class="problem-card-title">{problem.title}</span>
+                  <span class="problem-card-footer">
+                    <span class="problem-card-category">{problemCategory(problem)}</span>
+                    <span class="problem-card-action">เปิดโจทย์ <span aria-hidden="true">→</span></span>
+                  </span>
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
       </div>
-    </div>
+    </section>
   </div>
 {/if}
 
-<Confetti bind:trigger={triggerScreenConfetti} isFullScreen={true} />
+<style>
+  .list-screen {
+    gap: 26px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .page-title {
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .page-subtitle {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .list-action {
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+  }
+
+  .list-action svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .teacher-featured {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 22px;
+    border: 1px solid var(--accent-blue);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+  }
+
+  .featured-head,
+  .featured-headline {
+    display: flex;
+    align-items: center;
+  }
+
+  .featured-head {
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .featured-headline {
+    gap: 10px;
+  }
+
+  .featured-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border: 1px solid var(--accent-blue-border);
+    border-radius: 9px;
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+  }
+
+  .featured-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .featured-title {
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .featured-subtitle {
+    margin-top: 1px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .featured-count {
+    padding: 5px 10px;
+    border: 1px solid var(--accent-blue-border);
+    border-radius: 999px;
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+    font: 500 11px var(--font-mono);
+    white-space: nowrap;
+  }
+
+  .featured-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+
+  .teacher-card.extra {
+    display: none;
+  }
+
+  .teacher-featured.expanded .teacher-card.extra {
+    display: flex;
+  }
+
+  .teacher-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+    padding: 13px 14px;
+    border: 1px solid var(--accent-blue-border);
+    border-radius: var(--radius-md);
+    background: rgba(20, 20, 20, 0.5);
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+  }
+
+  .teacher-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-blue);
+    background: #1c2733;
+  }
+
+  .teacher-card.solved {
+    border-color: var(--accent-success-border);
+  }
+
+  .teacher-num {
+    color: var(--accent-blue);
+    font: 500 10px var(--font-mono);
+  }
+
+  .teacher-card.solved .teacher-num {
+    color: var(--accent-success);
+  }
+
+  .teacher-title {
+    color: var(--text-primary);
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .teacher-tag {
+    color: var(--text-muted);
+    font-size: 10px;
+  }
+
+  .teacher-check {
+    color: var(--accent-success);
+    font-size: 10.5px;
+    font-weight: 500;
+  }
+
+  .featured-toggle {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    color: var(--accent-blue);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .featured-toggle svg {
+    width: 13px;
+    height: 13px;
+    transition: transform 0.2s;
+  }
+
+  .teacher-featured.expanded .featured-toggle svg {
+    transform: rotate(180deg);
+  }
+
+  .catalog-empty {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .progress-line {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+  }
+
+  .progress-bar-wrap {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .progress-bar-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .daily-problems-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-label {
+    margin-bottom: 12px;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .problem-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .problem-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .problem-group-solved {
+    padding-top: 4px;
+  }
+
+  .problem-group-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 2px;
+  }
+
+  .problem-group-title {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .problem-group-count {
+    color: var(--text-muted);
+    font: 11px var(--font-mono);
+  }
+
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .problem-card {
+    position: relative;
+    display: flex;
+    min-height: 126px;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px 13px;
+    overflow: hidden;
+    border: 1px solid var(--border-muted);
+    border-radius: 7px;
+    background: var(--bg-card);
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transform: translateZ(0);
+    transition:
+      transform 180ms var(--ease-out-quart),
+      background-color 180ms var(--ease-out-quart),
+      border-color 180ms var(--ease-out-quart),
+      color 180ms var(--ease-out-quart);
+  }
+
+  .problem-card:hover {
+    z-index: 1;
+    border-color: var(--accent-blue);
+    background: #232b34;
+    transform: translateY(-2px) scale(1.015);
+  }
+
+  .problem-card:active {
+    transform: translateY(0) scale(0.985);
+    transition-duration: 90ms;
+  }
+
+  .problem-card:focus-visible {
+    z-index: 2;
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+    border-color: var(--accent-blue);
+  }
+
+  .problem-card-solved {
+    border-color: var(--accent-success-border);
+    background: #1d241e;
+  }
+
+  .problem-card-solved:hover {
+    border-color: var(--accent-success);
+    background: #222d25;
+  }
+
+  .problem-card-head {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .problem-card-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 10.5px;
+  }
+
+  .problem-card-solved .problem-card-status {
+    color: var(--accent-success);
+  }
+
+  .problem-status-dot {
+    display: inline-grid;
+    place-items: center;
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border: 1px solid var(--accent-blue);
+    border-radius: 50%;
+    color: transparent;
+  }
+
+  .problem-status-dot-solved {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+    border-color: var(--accent-success);
+    border-radius: 4px;
+    color: var(--accent-success);
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .problem-card-chevron {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    color: var(--text-muted);
+    transform: translateX(-2px);
+    transition: color 180ms var(--ease-out-quart), transform 180ms var(--ease-out-quart);
+  }
+
+  .problem-card:hover .problem-card-chevron,
+  .problem-card:focus-visible .problem-card-chevron {
+    color: var(--accent-blue);
+    transform: translateX(2px);
+  }
+
+  .problem-card-solved:hover .problem-card-chevron {
+    color: var(--accent-success);
+  }
+
+  .problem-card-title {
+    display: block;
+    max-width: 46ch;
+    margin-top: 18px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.45;
+  }
+
+  .problem-card-solved .problem-card-title {
+    color: var(--text-secondary);
+  }
+
+  .problem-card-footer {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 14px;
+  }
+
+  .problem-card-category {
+    max-width: 70%;
+    overflow: hidden;
+    padding: 2px 7px;
+    border: 1px solid var(--accent-blue-border);
+    border-radius: 4px;
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .problem-card-solved .problem-card-category {
+    border-color: var(--accent-success-border);
+    background: var(--accent-success-bg);
+    color: var(--accent-success);
+  }
+
+  .problem-card-action {
+    flex: 0 0 auto;
+    color: var(--text-muted);
+    font-size: 10.5px;
+    transition: color 180ms var(--ease-out-quart), transform 180ms var(--ease-out-quart);
+  }
+
+  .problem-card:hover .problem-card-action,
+  .problem-card:focus-visible .problem-card-action {
+    color: var(--accent-blue);
+    transform: translateX(2px);
+  }
+
+  .problem-card-solved:hover .problem-card-action {
+    color: var(--accent-success);
+  }
+
+  .list-empty-state {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 32px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .list-empty-state p {
+    max-width: 400px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .list-empty-state .btn-run {
+    margin-top: 4px;
+    padding: 8px 14px;
+    text-decoration: none;
+  }
+
+  .list-loading-mark {
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid var(--border);
+    border-top-color: var(--accent-blue);
+    border-radius: 50%;
+    animation: list-spin 0.9s linear infinite;
+  }
+
+  @keyframes list-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 760px) {
+    .list-screen {
+      gap: 22px;
+      padding: 24px 20px;
+    }
+
+    .progress-line {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+    }
+
+    .problem-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 440px) {
+    .page-header {
+      display: block;
+    }
+
+    .list-action {
+      margin-top: 16px;
+    }
+  }
+
+</style>

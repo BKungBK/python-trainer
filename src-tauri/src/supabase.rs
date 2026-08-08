@@ -278,6 +278,7 @@ impl SupabaseClient {
                             "Data Parsing" => "req_data_parsing",
                             "Statistics" => "req_statistics",
                             "Signal Processing" => "req_signal_processing",
+                            "Teacher Problems" => "req_teacher_problems",
                             _ => continue,
                         };
                         let _ = db.set_setting(setting_key, &row.target_count.to_string());

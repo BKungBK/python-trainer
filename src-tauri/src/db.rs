@@ -25,6 +25,12 @@ pub struct TestCase {
     pub visible: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct TeacherProblemSeed {
+    problems: Vec<Problem>,
+    test_cases: Vec<TestCase>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Submission {
     pub id: String,
@@ -102,6 +108,9 @@ impl DbManager {
         manager
             .seed_if_empty()
             .expect("Failed to seed mock problems");
+        manager
+            .seed_teacher_problems()
+            .expect("Failed to seed teacher problems");
         manager
     }
 
@@ -258,6 +267,58 @@ impl DbManager {
                     prob.description,
                     prob.input_specification,
                     prob.output_specification
+                ])?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Keep the teacher catalogue available for first-run/offline installs.
+    /// INSERT OR IGNORE preserves any content edited in Supabase after import.
+    fn seed_teacher_problems(&self) -> Result<()> {
+        let seed: TeacherProblemSeed =
+            serde_json::from_str(include_str!("../teacher_problems.json"))
+                .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        {
+            let mut problem_stmt = tx.prepare(
+                "INSERT OR IGNORE INTO problems
+                 (id, title, category, description, input_specification, output_specification)
+                 VALUES (?, ?, ?, ?, ?, ?)",
+            )?;
+            for problem in &seed.problems {
+                problem_stmt.execute(params![
+                    problem.id,
+                    problem.title,
+                    problem.category,
+                    problem.description,
+                    problem.input_specification,
+                    problem.output_specification,
+                ])?;
+            }
+        }
+        {
+            let mut public_stmt = tx.prepare(
+                "INSERT OR IGNORE INTO public_test_cases (id, problem_id, input, expected_output)
+                 VALUES (?, ?, ?, ?)",
+            )?;
+            let mut private_stmt = tx.prepare(
+                "INSERT OR IGNORE INTO private_test_cases (id, problem_id, input, expected_output)
+                 VALUES (?, ?, ?, ?)",
+            )?;
+            for test_case in &seed.test_cases {
+                let statement = if test_case.visible {
+                    &mut public_stmt
+                } else {
+                    &mut private_stmt
+                };
+                statement.execute(params![
+                    test_case.id,
+                    test_case.problem_id,
+                    test_case.input,
+                    test_case.expected_output,
                 ])?;
             }
         }

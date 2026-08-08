@@ -136,7 +136,17 @@ async fn set_avatar_url(
     avatar_url: Option<String>,
 ) -> Result<(), String> {
     if let Some(ref url) = avatar_url {
-        if url.len() > 2048 || !url.starts_with("https://") {
+        let parsed_url =
+            reqwest::Url::parse(url).map_err(|_| "Avatar URL is invalid.".to_string())?;
+        let configured_url = reqwest::Url::parse(&state.supabase.get_config().0)
+            .map_err(|_| "Supabase URL is invalid.".to_string())?;
+        let is_avatar_object = parsed_url.scheme() == "https"
+            && parsed_url.host_str() == configured_url.host_str()
+            && parsed_url
+                .path()
+                .starts_with("/storage/v1/object/public/avatars/");
+
+        if url.len() > 2048 || !is_avatar_object {
             return Err("Avatar URL is invalid.".to_string());
         }
     }
@@ -165,14 +175,14 @@ async fn set_avatar_url(
 
     user_status.avatar_url = avatar_url;
     state
-        .db
-        .save_user_status(&user_status)
-        .map_err(|e| format!("Failed to save avatar: {}", e))?;
-    state
         .supabase
         .update_status(&user_status)
         .await
         .map_err(|e| format!("Failed to sync avatar: {}", e))?;
+    state
+        .db
+        .save_user_status(&user_status)
+        .map_err(|e| format!("Failed to save avatar: {}", e))?;
 
     Ok(())
 }
@@ -241,6 +251,11 @@ fn get_submissions(
         .db
         .get_submissions_with_problems(&user_id)
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_problem_catalog(state: State<'_, AppState>) -> Result<Vec<db::Problem>, String> {
+    state.db.get_problems().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -476,6 +491,7 @@ async fn get_daily_challenge_inner(
         "req_data_parsing",
         "req_statistics",
         "req_signal_processing",
+        "req_teacher_problems",
     ];
     let settings_map = db.get_settings_map(&settings_keys);
 
@@ -509,6 +525,7 @@ async fn get_daily_challenge_inner(
         ("Data Parsing", get_req("req_data_parsing", 0)),
         ("Statistics", get_req("req_statistics", 0)),
         ("Signal Processing", get_req("req_signal_processing", 0)),
+        ("Teacher Problems", get_req("req_teacher_problems", 0)),
     ];
 
     let challenge_uuids = if supabase.is_configured() {
@@ -822,11 +839,22 @@ fn deterministic_shuffle<T>(vec: &mut [T], seed: u32) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_window_state::Builder::default().build());
+
+    #[cfg(debug_assertions)]
+    {
+        builder = builder.plugin(
+            tauri_plugin_mcp_bridge::Builder::new()
+                .bind_address("127.0.0.1")
+                .build(),
+        );
+    }
+
+    builder
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -860,7 +888,8 @@ pub fn run() {
             get_setting,
             reroll_daily_challenge,
             update_discord_presence,
-            get_submissions
+            get_submissions,
+            get_problem_catalog
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

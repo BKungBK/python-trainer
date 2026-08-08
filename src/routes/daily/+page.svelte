@@ -47,6 +47,25 @@
         },
         solved_problem_ids: ["circle_area"]
       };
+    } else if (cmd === "get_problem_catalog") {
+      return [
+        {
+          id: "circle_area",
+          title: "หาพื้นที่วงกลม",
+          category: "Input / Output",
+          description: "จงเขียนโปรแกรมคำนวณพื้นที่วงกลม",
+          input_specification: "รับค่ารัศมีของวงกลม",
+          output_specification: "แสดงพื้นที่วงกลม",
+        },
+        {
+          id: "even_odd",
+          title: "เลขคู่หรือเลขคี่",
+          category: "Conditions",
+          description: "ตรวจสอบว่าเป็นเลขคู่หรือเลขคี่",
+          input_specification: "รับจำนวนเต็มหนึ่งค่า",
+          output_specification: "แสดง Even หรือ Odd",
+        },
+      ];
     } else if (cmd === "get_public_test_cases") {
       return [
         { input: "5.0", expected_output: "78.54" },
@@ -58,6 +77,8 @@
 
   // Daily Challenge data — initialize from cache immediately to avoid loading flash
   let problems = $state<any[]>(appState.dailyChallenge?.problems ?? []);
+  let catalogProblem = $state<any | null>(null);
+  let requestedCatalogProblemId = "";
   let categoryProgress = $state<Record<string, { completed: number; required: number }>>(
     appState.dailyChallenge?.category_progress ?? {}
   );
@@ -200,7 +221,8 @@
     "Optimization": "การเพิ่มประสิทธิภาพ (Optimization)",
     "Data Parsing": "การแจกแจงข้อมูล (Data Parsing)",
     "Statistics": "สถิติ (Statistics)",
-    "Signal Processing": "การประมวลผลสัญญาณ (Signal Processing)"
+    "Signal Processing": "การประมวลผลสัญญาณ (Signal Processing)",
+    "Teacher Problems": "โจทย์ของอาจารย์ (Teacher Problems)"
   };
 
   // Judging & Run States
@@ -272,13 +294,14 @@
     if (problems.length > 0) {
       const problemId = $page.url.searchParams.get("problem");
       if (problemId) {
-        const found = problems.find(p => p.id === problemId);
+        const found = problems.find(p => p.id === problemId) ||
+          (catalogProblem?.id === problemId ? catalogProblem : null);
         if (found) {
           if (!selectedProblem || selectedProblem.id !== found.id) {
             selectProblem(found);
           }
         } else {
-          autoSelectRandomOrRedirect();
+          loadProblemFromCatalog(problemId);
         }
       } else {
         // If there's no problem parameter in the URL but we already have selectedProblem initialized,
@@ -291,6 +314,24 @@
       }
     }
   });
+
+  async function loadProblemFromCatalog(problemId: string) {
+    if (requestedCatalogProblemId === problemId) return;
+    requestedCatalogProblemId = problemId;
+
+    try {
+      const catalog = await invoke("get_problem_catalog");
+      const found = Array.isArray(catalog) ? catalog.find((problem) => problem.id === problemId) : null;
+      if (found) {
+        catalogProblem = found;
+        return;
+      }
+    } catch (e) {
+      console.error("Failed to load problem catalog:", e);
+    }
+
+    autoSelectRandomOrRedirect();
+  }
 
   // Debounce auto-save code changes (1 second)
   let saveTimeout: any;

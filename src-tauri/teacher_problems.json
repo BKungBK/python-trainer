@@ -1,0 +1,1507 @@
+{
+  "category": "Teacher Problems",
+  "problems": [
+    {
+      "id": "teacher_01",
+      "title": "คำนวณพื้นที่และเส้นรอบรูปสี่เหลี่ยมผืนผ้า",
+      "category": "Teacher Problems",
+      "description": "เขียนโปรแกรมรับค่าความกว้าง (width) และความยาว (length) ของสี่เหลี่ยมผืนผ้า\nเป็นจำนวนเต็ม 2 ค่า คั่นด้วยช่องว่างในบรรทัดเดียว แล้วคำนวณ **พื้นที่** และ **เส้นรอบรูป**",
+      "input_specification": "บรรทัดเดียว มีตัวเลขจำนวนเต็ม 2 ค่า คั่นด้วยช่องว่าง: `width length`",
+      "output_specification": "บรรทัดเดียว: `พื้นที่ เส้นรอบรูป` คั่นด้วยช่องว่าง"
+    },
+    {
+      "id": "teacher_02",
+      "title": "ตรวจสอบเลขคู่หรือเลขคี่",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n หนึ่งค่า แล้วพิมพ์ว่าเป็นเลขคู่ (`EVEN`) หรือเลขคี่ (`ODD`)",
+      "input_specification": "บรรทัดเดียว มีจำนวนเต็ม n (n อาจเป็นค่าลบได้)",
+      "output_specification": "พิมพ์ `EVEN` หรือ `ODD`"
+    },
+    {
+      "id": "teacher_03",
+      "title": "ตัดเกรดจากคะแนนสอบ",
+      "category": "Teacher Problems",
+      "description": "รับคะแนนสอบ (0-100) เป็นจำนวนเต็ม แล้วตัดสินเกรดตามเกณฑ์ต่อไปนี้\n- คะแนน >= 80 : เกรด A\n- คะแนน 70-79 : เกรด B\n- คะแนน 60-69 : เกรด C\n- คะแนน 50-59 : เกรด D\n- คะแนนน้อยกว่า 50 : เกรด F",
+      "input_specification": "บรรทัดเดียว มีจำนวนเต็มคะแนน 1 ค่า",
+      "output_specification": "พิมพ์ตัวอักษรเกรด (A/B/C/D/F)"
+    },
+    {
+      "id": "teacher_04",
+      "title": "ผลรวมและค่าเฉลี่ยของจำนวนในลิสต์",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n (จำนวนตัวเลข) ในบรรทัดแรก และตัวเลข n ตัวคั่นด้วยช่องว่างในบรรทัดที่สอง\nให้หาผลรวมและค่าเฉลี่ยของตัวเลขทั้งหมด (ค่าเฉลี่ยปัดเป็นทศนิยม 2 ตำแหน่ง)",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nบรรทัดที่ 2: ตัวเลข n ตัว คั่นด้วยช่องว่าง",
+      "output_specification": "บรรทัดเดียว: `ผลรวม ค่าเฉลี่ย` (ค่าเฉลี่ยแสดงทศนิยม 2 ตำแหน่ง)"
+    },
+    {
+      "id": "teacher_05",
+      "title": "นับจำนวนสระในคำ",
+      "category": "Teacher Problems",
+      "description": "รับข้อความ 1 บรรทัด (ตัวอักษรภาษาอังกฤษล้วน ไม่มีช่องว่าง) แล้วนับจำนวนสระ\n(a, e, i, o, u ทั้งตัวพิมพ์เล็กและใหญ่)",
+      "input_specification": "บรรทัดเดียว เป็นข้อความภาษาอังกฤษ",
+      "output_specification": "จำนวนเต็มแสดงจำนวนสระที่พบ"
+    },
+    {
+      "id": "teacher_06",
+      "title": "ตรวจสอบจำนวนเฉพาะ",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็มบวก n แล้วตรวจสอบว่าเป็นจำนวนเฉพาะ (Prime) หรือไม่",
+      "input_specification": "บรรทัดเดียว จำนวนเต็ม n (1 <= n <= 10^6)",
+      "output_specification": "พิมพ์ `PRIME` หรือ `NOT PRIME`"
+    },
+    {
+      "id": "teacher_07",
+      "title": "FizzBuzz ขยาย",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n แล้วพิมพ์ตัวเลขตั้งแต่ 1 ถึง n โดยแทนที่ด้วยกฎ:\n- หารด้วย 3 ลงตัว พิมพ์ `Fizz`\n- หารด้วย 5 ลงตัว พิมพ์ `Buzz`\n- หารด้วยทั้ง 3 และ 5 ลงตัว พิมพ์ `FizzBuzz`\n- หารด้วย 7 ลงตัว (แต่ไม่ใช่ 3 หรือ 5) พิมพ์ `Bang`\n- นอกเหนือจากนั้นพิมพ์ตัวเลขเดิม\nพิมพ์แต่ละค่าคั่นด้วยช่องว่างในบรรทัดเดียว",
+      "input_specification": "บรรทัดเดียว จำนวนเต็ม n (1 <= n <= 100)",
+      "output_specification": "บรรทัดเดียว ผลลัพธ์คั่นด้วยช่องว่าง"
+    },
+    {
+      "id": "teacher_08",
+      "title": "แฟกทอเรียลและการจัดหมู่ (Combination)",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n และ r (0 <= r <= n <= 20) แล้วคำนวณค่า `nCr` (จำนวนวิธีเลือก r สิ่งจาก n สิ่ง)\nโดยใช้สูตร `nCr = n! / (r! * (n-r)!)`",
+      "input_specification": "บรรทัดเดียว: `n r` คั่นด้วยช่องว่าง",
+      "output_specification": "จำนวนเต็มค่า nCr"
+    },
+    {
+      "id": "teacher_09",
+      "title": "ค่าสูงสุด ต่ำสุด และฐานนิยม (Mode)",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n และตัวเลข n ตัว แล้วหาค่ามากที่สุด ค่าน้อยที่สุด\nและฐานนิยม (ค่าที่ปรากฏบ่อยที่สุด ถ้ามีหลายค่าเท่ากันให้เลือกค่าที่น้อยที่สุด)",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nบรรทัดที่ 2: ตัวเลข n ตัวคั่นด้วยช่องว่าง",
+      "output_specification": "บรรทัดเดียว: `max min mode`"
+    },
+    {
+      "id": "teacher_10",
+      "title": "ตรวจสอบพาลินโดรมของประโยค",
+      "category": "Teacher Problems",
+      "description": "รับข้อความ 1 บรรทัด (อาจมีช่องว่างและตัวพิมพ์ใหญ่-เล็กปนกัน)\nให้ตรวจสอบว่าข้อความนั้นเป็นพาลินโดรมหรือไม่ โดย **ไม่นับช่องว่างและตัวพิมพ์เล็ก-ใหญ่**",
+      "input_specification": "บรรทัดเดียว เป็นข้อความ",
+      "output_specification": "พิมพ์ `YES` หรือ `NO`"
+    },
+    {
+      "id": "teacher_11",
+      "title": "จัดการสต็อกสินค้าด้วย Dictionary",
+      "category": "Teacher Problems",
+      "description": "ร้านค้ามีสต็อกสินค้าเริ่มต้น รับจำนวนสินค้าตั้งต้น n รายการ (ชื่อ จำนวน) ตามด้วยจำนวนคำสั่งซื้อ m คำสั่ง\nแต่ละคำสั่งซื้อระบุ ชื่อสินค้าและจำนวนที่ต้องการซื้อ ให้ตัดสต็อกออกถ้ามีเพียงพอ\nถ้าสต็อกไม่พอหรือไม่มีสินค้านั้น ให้พิมพ์ `FAILED` สำหรับคำสั่งนั้น มิฉะนั้นพิมพ์ `OK`\nเมื่อจบให้พิมพ์สต็อกคงเหลือของสินค้าทั้งหมด เรียงตามชื่อ (ก-ฮ/A-Z)",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nn บรรทัดถัดไป: `ชื่อสินค้า จำนวน`\nบรรทัดถัดมา: จำนวนเต็ม m\nm บรรทัดถัดไป: `ชื่อสินค้า จำนวนที่ต้องการซื้อ`",
+      "output_specification": "m บรรทัดแรก: ผลลัพธ์ `OK` หรือ `FAILED` ของแต่ละคำสั่งซื้อ ตามลำดับ\nบรรทัดถัดไป: สต็อกคงเหลือของสินค้าแต่ละชนิด เรียงตามชื่อ รูปแบบ `ชื่อ จำนวน` บรรทัดละ 1 รายการ"
+    },
+    {
+      "id": "teacher_12",
+      "title": "ผลรวมเลขฟีโบนักชี",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n แล้วหาผลรวมของเลขฟีโบนักชี n ตัวแรก\nโดยกำหนดให้ F(1)=1, F(2)=1, F(3)=2, ...",
+      "input_specification": "บรรทัดเดียว จำนวนเต็ม n (1 <= n <= 50)",
+      "output_specification": "จำนวนเต็มผลรวม"
+    },
+    {
+      "id": "teacher_13",
+      "title": "ผลรวมแนวทแยงของเมทริกซ์",
+      "category": "Teacher Problems",
+      "description": "รับเมทริกซ์จัตุรัสขนาด n x n แล้วหาผลรวมของแนวทแยงหลัก (บนซ้ายลงล่างขวา)\nและแนวทแยงรอง (บนขวาลงล่างซ้าย)",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nn บรรทัดถัดไป: แต่ละบรรทัดมีตัวเลข n ตัวคั่นด้วยช่องว่าง แทนแถวของเมทริกซ์",
+      "output_specification": "บรรทัดเดียว: `ผลรวมแนวทแยงหลัก ผลรวมแนวทแยงรอง`"
+    },
+    {
+      "id": "teacher_14",
+      "title": "แปลงเลขฐานสิบเป็นฐานสองและฐานแปด",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็มบวก n ในฐานสิบ แล้วแปลงเป็นเลขฐานสอง (binary) และฐานแปด (octal)\n**ห้ามใช้ฟังก์ชันสำเร็จรูป** `bin()` หรือ `oct()` ให้เขียนอัลกอริทึมการหารเก็บเศษเอง",
+      "input_specification": "บรรทัดเดียว จำนวนเต็ม n (0 <= n <= 100000)",
+      "output_specification": "บรรทัดเดียว: `เลขฐานสอง เลขฐานแปด`"
+    },
+    {
+      "id": "teacher_15",
+      "title": "ค่ามัธยฐาน (Median)",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n และตัวเลข n ตัว แล้วหาค่ามัธยฐานของชุดข้อมูล\n- ถ้า n เป็นเลขคี่ ค่ามัธยฐานคือค่ากลางหลังจากเรียงลำดับ\n- ถ้า n เป็นเลขคู่ ค่ามัธยฐานคือค่าเฉลี่ยของสองค่ากลาง",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nบรรทัดที่ 2: ตัวเลข n ตัว คั่นด้วยช่องว่าง",
+      "output_specification": "ค่ามัธยฐาน แสดงทศนิยม 2 ตำแหน่งเสมอ"
+    },
+    {
+      "id": "teacher_16",
+      "title": "เข้ารหัสซีซาร์ (Caesar Cipher)",
+      "category": "Teacher Problems",
+      "description": "รับข้อความ (ตัวอักษรภาษาอังกฤษพิมพ์เล็กล้วน ไม่มีช่องว่าง) และจำนวนเต็ม k (shift)\nให้เข้ารหัสด้วยวิธี Caesar Cipher คือเลื่อนตัวอักษรแต่ละตัวไปข้างหน้า k ตำแหน่งตามลำดับ a-z\n(วนกลับมาที่ 'a' เมื่อเลยตัว 'z')",
+      "input_specification": "บรรทัดที่ 1: ข้อความ (a-z พิมพ์เล็ก)\nบรรทัดที่ 2: จำนวนเต็ม k (0 <= k <= 100)",
+      "output_specification": "ข้อความที่เข้ารหัสแล้ว"
+    },
+    {
+      "id": "teacher_17",
+      "title": "ตรวจสอบแอนนาแกรม (Anagram)",
+      "category": "Teacher Problems",
+      "description": "รับข้อความ 2 บรรทัด (ตัวอักษรภาษาอังกฤษ อาจมีตัวพิมพ์ใหญ่-เล็กปนกันและมีช่องว่าง)\nตรวจสอบว่าทั้งสองข้อความเป็นแอนนาแกรมกันหรือไม่ (ตัวอักษรชุดเดียวกัน จำนวนเท่ากัน\nโดยไม่นับช่องว่างและไม่สนตัวพิมพ์ใหญ่-เล็ก)",
+      "input_specification": "บรรทัดที่ 1: ข้อความที่ 1\nบรรทัดที่ 2: ข้อความที่ 2",
+      "output_specification": "พิมพ์ `YES` หรือ `NO`"
+    },
+    {
+      "id": "teacher_18",
+      "title": "หาจำนวนเฉพาะด้วย Sieve of Eratosthenes",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n แล้วหาจำนวนเฉพาะทั้งหมดที่มีค่าไม่เกิน n โดย **ต้องใช้อัลกอริทึม\nSieve of Eratosthenes** (ห้ามตรวจสอบทีละตัวด้วยการหารแบบ solve6)",
+      "input_specification": "บรรทัดเดียว จำนวนเต็ม n (2 <= n <= 100000)",
+      "output_specification": "บรรทัดเดียว: จำนวนเฉพาะทั้งหมดที่ <= n คั่นด้วยช่องว่าง"
+    },
+    {
+      "id": "teacher_19",
+      "title": "ตรวจสอบวงเล็บสมดุลด้วย Stack",
+      "category": "Teacher Problems",
+      "description": "รับข้อความที่ประกอบด้วยวงเล็บ 3 ชนิด `()`, `[]`, `{}` เท่านั้น\nตรวจสอบว่าวงเล็บทั้งหมดปิดถูกต้องและสมดุลกันหรือไม่ (ต้องปิดตามลำดับที่เปิดล่าสุดก่อน)\n**ต้องใช้โครงสร้างข้อมูลแบบ Stack** (ใช้ Python list เป็น stack ได้ ด้วย `append`/`pop`)",
+      "input_specification": "บรรทัดเดียว ข้อความที่มีเฉพาะอักขระ `()[]{}`",
+      "output_specification": "พิมพ์ `VALID` หรือ `INVALID`"
+    },
+    {
+      "id": "teacher_20",
+      "title": "จำลองคิวธนาคารด้วย Queue",
+      "category": "Teacher Problems",
+      "description": "ธนาคารมีเคาน์เตอร์บริการ 1 ช่อง ลูกค้า n คนมาต่อคิวตามลำดับ (คนแรกที่มาได้รับบริการก่อน)\nแต่ละคนใช้เวลาให้บริการ (นาที) ตามที่กำหนด ให้หาว่าลูกค้าแต่ละคน **ต้องรอ (waiting time)**\nกี่นาทีก่อนจะได้รับบริการ (waiting time ของคนแรกคือ 0)\n**ต้องใช้โครงสร้างข้อมูลแบบ Queue** (ใช้ `collections.deque`)",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nบรรทัดที่ 2: เวลาให้บริการของลูกค้าแต่ละคน (นาที) คั่นด้วยช่องว่าง n ค่า",
+      "output_specification": "บรรทัดเดียว: waiting time ของลูกค้าแต่ละคนตามลำดับ คั่นด้วยช่องว่าง"
+    },
+    {
+      "id": "teacher_21",
+      "title": "จำลอง Linked List แบบง่ายด้วยคำสั่งแทรก/ลบ",
+      "category": "Teacher Problems",
+      "description": "จำลองรายการโยง (singly linked list) ของจำนวนเต็ม เริ่มต้นจากลิสต์ว่าง\nรับจำนวนคำสั่ง m คำสั่ง โดยแต่ละคำสั่งเป็นหนึ่งในสามรูปแบบ:\n- `APPEND x` : เพิ่มค่า x ต่อท้ายรายการ\n- `PREPEND x` : เพิ่มค่า x ไว้หน้าสุดของรายการ\n- `DELETE x` : ลบค่า x ตัวแรกที่พบในรายการ (ถ้ามี)\n\nหลังทำคำสั่งครบทั้งหมดแล้ว ให้พิมพ์รายการที่เหลือตามลำดับจากหัวถึงท้าย",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม m\nm บรรทัดถัดไป: คำสั่งตามรูปแบบด้านบน",
+      "output_specification": "บรรทัดเดียว: ค่าที่เหลือในรายการ คั่นด้วยช่องว่าง (ถ้าว่างให้พิมพ์ `EMPTY`)"
+    },
+    {
+      "id": "teacher_22",
+      "title": "หา GCD และ LCM ของจำนวนหลายตัว",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n และตัวเลข n ตัว ให้หา **ห.ร.ม. (GCD)** และ **ค.ร.น. (LCM)**\nของตัวเลขทั้งหมดพร้อมกัน",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nบรรทัดที่ 2: ตัวเลข n ตัวคั่นด้วยช่องว่าง (ทุกตัวเป็นจำนวนเต็มบวก)",
+      "output_specification": "บรรทัดเดียว: `GCD LCM`"
+    },
+    {
+      "id": "teacher_23",
+      "title": "การคูณเมทริกซ์ (Matrix Multiplication)",
+      "category": "Teacher Problems",
+      "description": "รับเมทริกซ์ A ขนาด n x m และเมทริกซ์ B ขนาด m x p แล้วคำนวณผลคูณเมทริกซ์ A x B\n**ห้ามใช้ไลบรารีสำเร็จรูปเช่น numpy** ให้เขียนลูปคูณเมทริกซ์เอง",
+      "input_specification": "บรรทัดที่ 1: `n m p`\nn บรรทัดถัดไป: เมทริกซ์ A (แต่ละแถวมี m ค่า)\nm บรรทัดถัดไป: เมทริกซ์ B (แต่ละแถวมี p ค่า)",
+      "output_specification": "n บรรทัด แสดงเมทริกซ์ผลลัพธ์ขนาด n x p แต่ละแถวคั่นด้วยช่องว่าง"
+    },
+    {
+      "id": "teacher_24",
+      "title": "หาความยาว Longest Common Subsequence (LCS)",
+      "category": "Teacher Problems",
+      "description": "รับข้อความ 2 บรรทัด (ตัวอักษรภาษาอังกฤษพิมพ์เล็กล้วน) ให้หาความยาวของ\nLongest Common Subsequence (สายอักขระย่อยร่วมที่ยาวที่สุด ไม่จำเป็นต้องต่อเนื่องกัน\nแต่ต้องเรียงลำดับตามต้นฉบับ) ของทั้งสองข้อความ",
+      "input_specification": "บรรทัดที่ 1: ข้อความที่ 1\nบรรทัดที่ 2: ข้อความที่ 2",
+      "output_specification": "จำนวนเต็มความยาวของ LCS"
+    },
+    {
+      "id": "teacher_25",
+      "title": "จัดกลุ่มคำตามแอนนาแกรม",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n และคำ n คำ (ตัวอักษรภาษาอังกฤษพิมพ์เล็ก) ให้จัดกลุ่มคำที่เป็นแอนนาแกรมกัน\nไว้ในกลุ่มเดียวกัน โดยแสดงแต่ละกลุ่มในหนึ่งบรรทัด เรียงคำภายในกลุ่มตามลำดับที่พบในข้อมูลนำเข้า\nและเรียงกลุ่มตามลำดับที่คำแรกของกลุ่มปรากฏในข้อมูลนำเข้า",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nบรรทัดที่ 2: คำ n คำ คั่นด้วยช่องว่าง",
+      "output_specification": "พิมพ์แต่ละกลุ่มในหนึ่งบรรทัด คำในกลุ่มคั่นด้วยช่องว่าง"
+    },
+    {
+      "id": "teacher_26",
+      "title": "ระบบจัดการคะแนนนักเรียนด้วย Nested Dictionary",
+      "category": "Teacher Problems",
+      "description": "รับข้อมูลนักเรียน n คน แต่ละคนมีชื่อและคะแนนสอบ 3 วิชา (คณิต วิทย์ อังกฤษ)\nให้สร้างโครงสร้าง nested dictionary เก็บข้อมูล แล้วคำนวณ **คะแนนเฉลี่ยของแต่ละคน**\nจากนั้นพิมพ์ชื่อและคะแนนเฉลี่ยของนักเรียน โดยเรียงจากคะแนนเฉลี่ย **มากไปน้อย**\n(ถ้าคะแนนเท่ากันให้เรียงตามชื่อ ก-ฮ/A-Z)",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nn บรรทัดถัดไป: `ชื่อ คณิต วิทย์ อังกฤษ`",
+      "output_specification": "n บรรทัด: `ชื่อ ค่าเฉลี่ย` (ค่าเฉลี่ยแสดงทศนิยม 2 ตำแหน่ง) เรียงจากมากไปน้อย"
+    },
+    {
+      "id": "teacher_27",
+      "title": "คำนวณค่าเบี่ยงเบนมาตรฐาน (Standard Deviation)",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n และตัวเลข n ตัว ให้คำนวณ **ค่าเฉลี่ย (mean)**, **ความแปรปรวน (variance)**\nและ **ส่วนเบี่ยงเบนมาตรฐาน (standard deviation)** ของกลุ่มตัวอย่างประชากร (population)\nโดยใช้สูตร:\nvariance = (Σ(x - mean)^2) / n\nsd = sqrt(variance)",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nบรรทัดที่ 2: ตัวเลข n ตัว คั่นด้วยช่องว่าง",
+      "output_specification": "บรรทัดเดียว: `mean variance sd` (แต่ละค่าแสดงทศนิยม 2 ตำแหน่ง)"
+    },
+    {
+      "id": "teacher_28",
+      "title": "ตรวจสอบปีอธิกสุรทินและหาวันที่ในปีถัดไป",
+      "category": "Teacher Problems",
+      "description": "รับปี ค.ศ. (year), เดือน (month, 1-12), และวัน (day) เป็นจำนวนเต็ม 3 ค่า\n1. ตรวจสอบว่าปีนั้นเป็นปีอธิกสุรทิน (leap year) หรือไม่\n   (ปีอธิกสุรทิน: หารด้วย 4 ลงตัว และ (ไม่หารด้วย 100 ลงตัว หรือ หารด้วย 400 ลงตัว))\n2. หาว่าวันถัดไป (วันที่ + 1) คือวันที่เท่าไหร่ เดือนอะไร ปีอะไร\n   (ถ้าวันที่ที่รับมาเกินจำนวนวันในเดือนนั้นให้ถือว่า input ไม่ถูกต้อง ไม่ต้องตรวจสอบกรณีนี้)",
+      "input_specification": "บรรทัดเดียว: `year month day`",
+      "output_specification": "บรรทัดที่ 1: `LEAP` หรือ `NOT LEAP`\nบรรทัดที่ 2: `year month day` ของวันถัดไป"
+    },
+    {
+      "id": "teacher_29",
+      "title": "ค้นหาแบบ Binary Search",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนเต็ม n, ตัวเลข n ตัวที่**เรียงลำดับจากน้อยไปมากแล้ว**, และค่าที่ต้องการค้นหา target\nให้หาตำแหน่ง (index เริ่มจาก 0) ของ target ในลิสต์โดยใช้อัลกอริทึม **Binary Search**\nถ้าไม่พบให้พิมพ์ `-1`\n**ห้ามใช้ `list.index()` หรือวนลูปเชิงเส้นตรงตรวจทีละตัว (linear search)**",
+      "input_specification": "บรรทัดที่ 1: จำนวนเต็ม n\nบรรทัดที่ 2: ตัวเลข n ตัวเรียงจากน้อยไปมาก คั่นด้วยช่องว่าง\nบรรทัดที่ 3: จำนวนเต็ม target",
+      "output_specification": "ตำแหน่ง (index) ของ target หรือ `-1` หากไม่พบ"
+    },
+    {
+      "id": "teacher_30",
+      "title": "หอคอยฮานอย (Tower of Hanoi)",
+      "category": "Teacher Problems",
+      "description": "รับจำนวนแผ่นดิสก์ n ให้จำลองการแก้ปัญหาหอคอยฮานอยด้วย **recursion**\n(ย้ายแผ่นดิสก์ n แผ่นจากเสา A ไปเสา C โดยใช้เสา B เป็นตัวช่วย)\nพิมพ์ลำดับขั้นตอนการย้ายทั้งหมด และจำนวนขั้นตอนรวม",
+      "input_specification": "บรรทัดเดียว จำนวนเต็ม n (1 <= n <= 10)",
+      "output_specification": "พิมพ์ทุกขั้นตอนการย้าย รูปแบบ `Move disk k from X to Y` (k คือหมายเลขแผ่นดิสก์ นับจากขนาดเล็กสุด=1)\nบรรทัดสุดท้าย พิมพ์ `Total moves: จำนวนขั้นตอนทั้งหมด`"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "teacher_01_sample",
+      "problem_id": "teacher_01",
+      "input": "4 6",
+      "expected_output": "24 20",
+      "visible": true
+    },
+    {
+      "id": "teacher_01_case_1",
+      "problem_id": "teacher_01",
+      "input": "3 8",
+      "expected_output": "24 22",
+      "visible": false
+    },
+    {
+      "id": "teacher_01_case_2",
+      "problem_id": "teacher_01",
+      "input": "10 2",
+      "expected_output": "20 24",
+      "visible": false
+    },
+    {
+      "id": "teacher_01_case_3",
+      "problem_id": "teacher_01",
+      "input": "7 7",
+      "expected_output": "49 28",
+      "visible": false
+    },
+    {
+      "id": "teacher_01_case_4",
+      "problem_id": "teacher_01",
+      "input": "1 1",
+      "expected_output": "1 4",
+      "visible": false
+    },
+    {
+      "id": "teacher_01_case_5",
+      "problem_id": "teacher_01",
+      "input": "15 9",
+      "expected_output": "135 48",
+      "visible": false
+    },
+    {
+      "id": "teacher_02_sample",
+      "problem_id": "teacher_02",
+      "input": "7",
+      "expected_output": "ODD",
+      "visible": true
+    },
+    {
+      "id": "teacher_02_case_1",
+      "problem_id": "teacher_02",
+      "input": "13",
+      "expected_output": "ODD",
+      "visible": false
+    },
+    {
+      "id": "teacher_02_case_2",
+      "problem_id": "teacher_02",
+      "input": "10",
+      "expected_output": "EVEN",
+      "visible": false
+    },
+    {
+      "id": "teacher_02_case_3",
+      "problem_id": "teacher_02",
+      "input": "-3",
+      "expected_output": "ODD",
+      "visible": false
+    },
+    {
+      "id": "teacher_02_case_4",
+      "problem_id": "teacher_02",
+      "input": "0",
+      "expected_output": "EVEN",
+      "visible": false
+    },
+    {
+      "id": "teacher_02_case_5",
+      "problem_id": "teacher_02",
+      "input": "-8",
+      "expected_output": "EVEN",
+      "visible": false
+    },
+    {
+      "id": "teacher_03_sample",
+      "problem_id": "teacher_03",
+      "input": "85",
+      "expected_output": "A",
+      "visible": true
+    },
+    {
+      "id": "teacher_03_case_1",
+      "problem_id": "teacher_03",
+      "input": "91",
+      "expected_output": "A",
+      "visible": false
+    },
+    {
+      "id": "teacher_03_case_2",
+      "problem_id": "teacher_03",
+      "input": "72",
+      "expected_output": "B",
+      "visible": false
+    },
+    {
+      "id": "teacher_03_case_3",
+      "problem_id": "teacher_03",
+      "input": "63",
+      "expected_output": "C",
+      "visible": false
+    },
+    {
+      "id": "teacher_03_case_4",
+      "problem_id": "teacher_03",
+      "input": "50",
+      "expected_output": "D",
+      "visible": false
+    },
+    {
+      "id": "teacher_03_case_5",
+      "problem_id": "teacher_03",
+      "input": "42",
+      "expected_output": "F",
+      "visible": false
+    },
+    {
+      "id": "teacher_04_sample",
+      "problem_id": "teacher_04",
+      "input": "4\n2 4 6 8",
+      "expected_output": "20 5.00",
+      "visible": true
+    },
+    {
+      "id": "teacher_04_case_1",
+      "problem_id": "teacher_04",
+      "input": "3\n5 10 15",
+      "expected_output": "30 10.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_04_case_2",
+      "problem_id": "teacher_04",
+      "input": "3\n10 20 30",
+      "expected_output": "60 20.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_04_case_3",
+      "problem_id": "teacher_04",
+      "input": "5\n1 2 3 4 5",
+      "expected_output": "15 3.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_04_case_4",
+      "problem_id": "teacher_04",
+      "input": "1\n7",
+      "expected_output": "7 7.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_04_case_5",
+      "problem_id": "teacher_04",
+      "input": "6\n5 5 5 5 5 5",
+      "expected_output": "30 5.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_05_sample",
+      "problem_id": "teacher_05",
+      "input": "ProgrammingIsFun",
+      "expected_output": "5",
+      "visible": true
+    },
+    {
+      "id": "teacher_05_case_1",
+      "problem_id": "teacher_05",
+      "input": "ArtificialIntelligence",
+      "expected_output": "10",
+      "visible": false
+    },
+    {
+      "id": "teacher_05_case_2",
+      "problem_id": "teacher_05",
+      "input": "Beautiful",
+      "expected_output": "5",
+      "visible": false
+    },
+    {
+      "id": "teacher_05_case_3",
+      "problem_id": "teacher_05",
+      "input": "Rhythm",
+      "expected_output": "0",
+      "visible": false
+    },
+    {
+      "id": "teacher_05_case_4",
+      "problem_id": "teacher_05",
+      "input": "AEIOUaeiou",
+      "expected_output": "10",
+      "visible": false
+    },
+    {
+      "id": "teacher_05_case_5",
+      "problem_id": "teacher_05",
+      "input": "PythonLanguage",
+      "expected_output": "5",
+      "visible": false
+    },
+    {
+      "id": "teacher_06_sample",
+      "problem_id": "teacher_06",
+      "input": "29",
+      "expected_output": "PRIME",
+      "visible": true
+    },
+    {
+      "id": "teacher_06_case_1",
+      "problem_id": "teacher_06",
+      "input": "13",
+      "expected_output": "PRIME",
+      "visible": false
+    },
+    {
+      "id": "teacher_06_case_2",
+      "problem_id": "teacher_06",
+      "input": "1",
+      "expected_output": "NOT PRIME",
+      "visible": false
+    },
+    {
+      "id": "teacher_06_case_3",
+      "problem_id": "teacher_06",
+      "input": "97",
+      "expected_output": "PRIME",
+      "visible": false
+    },
+    {
+      "id": "teacher_06_case_4",
+      "problem_id": "teacher_06",
+      "input": "100",
+      "expected_output": "NOT PRIME",
+      "visible": false
+    },
+    {
+      "id": "teacher_06_case_5",
+      "problem_id": "teacher_06",
+      "input": "997",
+      "expected_output": "PRIME",
+      "visible": false
+    },
+    {
+      "id": "teacher_07_sample",
+      "problem_id": "teacher_07",
+      "input": "16",
+      "expected_output": "1 2 Fizz 4 Buzz Fizz Bang 8 Fizz Buzz 11 Fizz 13 Bang FizzBuzz 16",
+      "visible": true
+    },
+    {
+      "id": "teacher_07_case_1",
+      "problem_id": "teacher_07",
+      "input": "20",
+      "expected_output": "1 2 Fizz 4 Buzz Fizz Bang 8 Fizz Buzz 11 Fizz 13 Bang FizzBuzz 16 17 Fizz 19 Buzz",
+      "visible": false
+    },
+    {
+      "id": "teacher_07_case_2",
+      "problem_id": "teacher_07",
+      "input": "1",
+      "expected_output": "1",
+      "visible": false
+    },
+    {
+      "id": "teacher_07_case_3",
+      "problem_id": "teacher_07",
+      "input": "21",
+      "expected_output": "1 2 Fizz 4 Buzz Fizz Bang 8 Fizz Buzz 11 Fizz 13 Bang FizzBuzz 16 17 Fizz 19 Buzz Fizz",
+      "visible": false
+    },
+    {
+      "id": "teacher_07_case_4",
+      "problem_id": "teacher_07",
+      "input": "35",
+      "expected_output": "1 2 Fizz 4 Buzz Fizz Bang 8 Fizz Buzz 11 Fizz 13 Bang FizzBuzz 16 17 Fizz 19 Buzz Fizz 22 23 Fizz Buzz 26 Fizz Bang 29 FizzBuzz 31 32 Fizz 34 Buzz",
+      "visible": false
+    },
+    {
+      "id": "teacher_07_case_5",
+      "problem_id": "teacher_07",
+      "input": "10",
+      "expected_output": "1 2 Fizz 4 Buzz Fizz Bang 8 Fizz Buzz",
+      "visible": false
+    },
+    {
+      "id": "teacher_08_sample",
+      "problem_id": "teacher_08",
+      "input": "5 2",
+      "expected_output": "10",
+      "visible": true
+    },
+    {
+      "id": "teacher_08_case_1",
+      "problem_id": "teacher_08",
+      "input": "7 3",
+      "expected_output": "35",
+      "visible": false
+    },
+    {
+      "id": "teacher_08_case_2",
+      "problem_id": "teacher_08",
+      "input": "10 5",
+      "expected_output": "252",
+      "visible": false
+    },
+    {
+      "id": "teacher_08_case_3",
+      "problem_id": "teacher_08",
+      "input": "6 0",
+      "expected_output": "1",
+      "visible": false
+    },
+    {
+      "id": "teacher_08_case_4",
+      "problem_id": "teacher_08",
+      "input": "6 6",
+      "expected_output": "1",
+      "visible": false
+    },
+    {
+      "id": "teacher_08_case_5",
+      "problem_id": "teacher_08",
+      "input": "20 10",
+      "expected_output": "184756",
+      "visible": false
+    },
+    {
+      "id": "teacher_09_sample",
+      "problem_id": "teacher_09",
+      "input": "6\n4 2 4 6 2 4",
+      "expected_output": "6 2 4",
+      "visible": true
+    },
+    {
+      "id": "teacher_09_case_1",
+      "problem_id": "teacher_09",
+      "input": "7\n3 5 3 8 5 3 9",
+      "expected_output": "9 3 3",
+      "visible": false
+    },
+    {
+      "id": "teacher_09_case_2",
+      "problem_id": "teacher_09",
+      "input": "5\n1 1 2 2 3",
+      "expected_output": "3 1 1",
+      "visible": false
+    },
+    {
+      "id": "teacher_09_case_3",
+      "problem_id": "teacher_09",
+      "input": "4\n7 7 7 7",
+      "expected_output": "7 7 7",
+      "visible": false
+    },
+    {
+      "id": "teacher_09_case_4",
+      "problem_id": "teacher_09",
+      "input": "3\n-5 0 5",
+      "expected_output": "5 -5 -5",
+      "visible": false
+    },
+    {
+      "id": "teacher_09_case_5",
+      "problem_id": "teacher_09",
+      "input": "8\n3 1 4 1 5 9 2 6",
+      "expected_output": "9 1 1",
+      "visible": false
+    },
+    {
+      "id": "teacher_10_sample",
+      "problem_id": "teacher_10",
+      "input": "Was it a car or a cat I saw",
+      "expected_output": "YES",
+      "visible": true
+    },
+    {
+      "id": "teacher_10_case_1",
+      "problem_id": "teacher_10",
+      "input": "No lemon no melon",
+      "expected_output": "YES",
+      "visible": false
+    },
+    {
+      "id": "teacher_10_case_2",
+      "problem_id": "teacher_10",
+      "input": "Hello World",
+      "expected_output": "NO",
+      "visible": false
+    },
+    {
+      "id": "teacher_10_case_3",
+      "problem_id": "teacher_10",
+      "input": "Never Odd Or Even",
+      "expected_output": "YES",
+      "visible": false
+    },
+    {
+      "id": "teacher_10_case_4",
+      "problem_id": "teacher_10",
+      "input": "Python Programming",
+      "expected_output": "NO",
+      "visible": false
+    },
+    {
+      "id": "teacher_10_case_5",
+      "problem_id": "teacher_10",
+      "input": "A man a plan a canal Panama",
+      "expected_output": "YES",
+      "visible": false
+    },
+    {
+      "id": "teacher_11_sample",
+      "problem_id": "teacher_11",
+      "input": "2\napple 10\nbanana 5\n2\napple 3\nbanana 8",
+      "expected_output": "OK\nFAILED\napple 7\nbanana 5",
+      "visible": true
+    },
+    {
+      "id": "teacher_11_case_1",
+      "problem_id": "teacher_11",
+      "input": "3\nmango 8\norange 4\nlime 6\n3\nmango 2\norange 5\nlime 6",
+      "expected_output": "OK\nFAILED\nOK\nlime 0\nmango 6\norange 4",
+      "visible": false
+    },
+    {
+      "id": "teacher_11_case_2",
+      "problem_id": "teacher_11",
+      "input": "1\nrice 20\n3\nrice 5\nrice 10\nrice 10",
+      "expected_output": "OK\nOK\nFAILED\nrice 5",
+      "visible": false
+    },
+    {
+      "id": "teacher_11_case_3",
+      "problem_id": "teacher_11",
+      "input": "3\npen 5\nbook 3\neraser 8\n2\npen 5\nbook 4",
+      "expected_output": "OK\nFAILED\nbook 3\neraser 8\npen 0",
+      "visible": false
+    },
+    {
+      "id": "teacher_11_case_4",
+      "problem_id": "teacher_11",
+      "input": "1\nmilk 0\n1\nmilk 1",
+      "expected_output": "FAILED\nmilk 0",
+      "visible": false
+    },
+    {
+      "id": "teacher_11_case_5",
+      "problem_id": "teacher_11",
+      "input": "4\na 1\nb 2\nc 3\nd 4\n4\na 1\nb 2\nc 3\nd 5",
+      "expected_output": "OK\nOK\nOK\nFAILED\na 0\nb 0\nc 0\nd 4",
+      "visible": false
+    },
+    {
+      "id": "teacher_12_sample",
+      "problem_id": "teacher_12",
+      "input": "6",
+      "expected_output": "20",
+      "visible": true
+    },
+    {
+      "id": "teacher_12_case_1",
+      "problem_id": "teacher_12",
+      "input": "8",
+      "expected_output": "54",
+      "visible": false
+    },
+    {
+      "id": "teacher_12_case_2",
+      "problem_id": "teacher_12",
+      "input": "1",
+      "expected_output": "1",
+      "visible": false
+    },
+    {
+      "id": "teacher_12_case_3",
+      "problem_id": "teacher_12",
+      "input": "2",
+      "expected_output": "2",
+      "visible": false
+    },
+    {
+      "id": "teacher_12_case_4",
+      "problem_id": "teacher_12",
+      "input": "10",
+      "expected_output": "143",
+      "visible": false
+    },
+    {
+      "id": "teacher_12_case_5",
+      "problem_id": "teacher_12",
+      "input": "50",
+      "expected_output": "32951280098",
+      "visible": false
+    },
+    {
+      "id": "teacher_13_sample",
+      "problem_id": "teacher_13",
+      "input": "3\n1 2 3\n4 5 6\n7 8 9",
+      "expected_output": "15 15",
+      "visible": true
+    },
+    {
+      "id": "teacher_13_case_1",
+      "problem_id": "teacher_13",
+      "input": "3\n2 0 1\n0 3 0\n1 0 4",
+      "expected_output": "9 5",
+      "visible": false
+    },
+    {
+      "id": "teacher_13_case_2",
+      "problem_id": "teacher_13",
+      "input": "2\n1 2\n3 4",
+      "expected_output": "5 5",
+      "visible": false
+    },
+    {
+      "id": "teacher_13_case_3",
+      "problem_id": "teacher_13",
+      "input": "1\n5",
+      "expected_output": "5 5",
+      "visible": false
+    },
+    {
+      "id": "teacher_13_case_4",
+      "problem_id": "teacher_13",
+      "input": "4\n1 0 0 1\n0 1 1 0\n0 1 1 0\n1 0 0 1",
+      "expected_output": "4 4",
+      "visible": false
+    },
+    {
+      "id": "teacher_13_case_5",
+      "problem_id": "teacher_13",
+      "input": "3\n2 4 6\n1 3 5\n7 9 8",
+      "expected_output": "13 16",
+      "visible": false
+    },
+    {
+      "id": "teacher_14_sample",
+      "problem_id": "teacher_14",
+      "input": "25",
+      "expected_output": "11001 31",
+      "visible": true
+    },
+    {
+      "id": "teacher_14_case_1",
+      "problem_id": "teacher_14",
+      "input": "77",
+      "expected_output": "1001101 115",
+      "visible": false
+    },
+    {
+      "id": "teacher_14_case_2",
+      "problem_id": "teacher_14",
+      "input": "0",
+      "expected_output": "0 0",
+      "visible": false
+    },
+    {
+      "id": "teacher_14_case_3",
+      "problem_id": "teacher_14",
+      "input": "255",
+      "expected_output": "11111111 377",
+      "visible": false
+    },
+    {
+      "id": "teacher_14_case_4",
+      "problem_id": "teacher_14",
+      "input": "1024",
+      "expected_output": "10000000000 2000",
+      "visible": false
+    },
+    {
+      "id": "teacher_14_case_5",
+      "problem_id": "teacher_14",
+      "input": "100000",
+      "expected_output": "11000011010100000 303240",
+      "visible": false
+    },
+    {
+      "id": "teacher_15_sample",
+      "problem_id": "teacher_15",
+      "input": "5\n7 1 4 9 2",
+      "expected_output": "4.00",
+      "visible": true
+    },
+    {
+      "id": "teacher_15_case_1",
+      "problem_id": "teacher_15",
+      "input": "6\n3 1 4 1 5 9",
+      "expected_output": "3.50",
+      "visible": false
+    },
+    {
+      "id": "teacher_15_case_2",
+      "problem_id": "teacher_15",
+      "input": "4\n1 2 3 4",
+      "expected_output": "2.50",
+      "visible": false
+    },
+    {
+      "id": "teacher_15_case_3",
+      "problem_id": "teacher_15",
+      "input": "1\n10",
+      "expected_output": "10.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_15_case_4",
+      "problem_id": "teacher_15",
+      "input": "6\n5 3 8 1 9 2",
+      "expected_output": "4.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_15_case_5",
+      "problem_id": "teacher_15",
+      "input": "3\n100 1 50",
+      "expected_output": "50.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_16_sample",
+      "problem_id": "teacher_16",
+      "input": "hello\n3",
+      "expected_output": "khoor",
+      "visible": true
+    },
+    {
+      "id": "teacher_16_case_1",
+      "problem_id": "teacher_16",
+      "input": "attack\n5",
+      "expected_output": "fyyfhp",
+      "visible": false
+    },
+    {
+      "id": "teacher_16_case_2",
+      "problem_id": "teacher_16",
+      "input": "xyz\n2",
+      "expected_output": "zab",
+      "visible": false
+    },
+    {
+      "id": "teacher_16_case_3",
+      "problem_id": "teacher_16",
+      "input": "abcdefg\n26",
+      "expected_output": "abcdefg",
+      "visible": false
+    },
+    {
+      "id": "teacher_16_case_4",
+      "problem_id": "teacher_16",
+      "input": "python\n13",
+      "expected_output": "clguba",
+      "visible": false
+    },
+    {
+      "id": "teacher_16_case_5",
+      "problem_id": "teacher_16",
+      "input": "zzzz\n1",
+      "expected_output": "aaaa",
+      "visible": false
+    },
+    {
+      "id": "teacher_17_sample",
+      "problem_id": "teacher_17",
+      "input": "Listen\nSilent",
+      "expected_output": "YES",
+      "visible": true
+    },
+    {
+      "id": "teacher_17_case_1",
+      "problem_id": "teacher_17",
+      "input": "Elvis\nLives",
+      "expected_output": "YES",
+      "visible": false
+    },
+    {
+      "id": "teacher_17_case_2",
+      "problem_id": "teacher_17",
+      "input": "Hello\nWorld",
+      "expected_output": "NO",
+      "visible": false
+    },
+    {
+      "id": "teacher_17_case_3",
+      "problem_id": "teacher_17",
+      "input": "Dormitory\nDirty Room",
+      "expected_output": "YES",
+      "visible": false
+    },
+    {
+      "id": "teacher_17_case_4",
+      "problem_id": "teacher_17",
+      "input": "The Morse Code\nHere Come Dots",
+      "expected_output": "YES",
+      "visible": false
+    },
+    {
+      "id": "teacher_17_case_5",
+      "problem_id": "teacher_17",
+      "input": "abc\nabd",
+      "expected_output": "NO",
+      "visible": false
+    },
+    {
+      "id": "teacher_18_sample",
+      "problem_id": "teacher_18",
+      "input": "30",
+      "expected_output": "2 3 5 7 11 13 17 19 23 29",
+      "visible": true
+    },
+    {
+      "id": "teacher_18_case_1",
+      "problem_id": "teacher_18",
+      "input": "40",
+      "expected_output": "2 3 5 7 11 13 17 19 23 29 31 37",
+      "visible": false
+    },
+    {
+      "id": "teacher_18_case_2",
+      "problem_id": "teacher_18",
+      "input": "2",
+      "expected_output": "2",
+      "visible": false
+    },
+    {
+      "id": "teacher_18_case_3",
+      "problem_id": "teacher_18",
+      "input": "50",
+      "expected_output": "2 3 5 7 11 13 17 19 23 29 31 37 41 43 47",
+      "visible": false
+    },
+    {
+      "id": "teacher_18_case_4",
+      "problem_id": "teacher_18",
+      "input": "100",
+      "expected_output": "2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97",
+      "visible": false
+    },
+    {
+      "id": "teacher_18_case_5",
+      "problem_id": "teacher_18",
+      "input": "17",
+      "expected_output": "2 3 5 7 11 13 17",
+      "visible": false
+    },
+    {
+      "id": "teacher_19_sample",
+      "problem_id": "teacher_19",
+      "input": "{[()()]}",
+      "expected_output": "VALID",
+      "visible": true
+    },
+    {
+      "id": "teacher_19_case_1",
+      "problem_id": "teacher_19",
+      "input": "([{}])",
+      "expected_output": "VALID",
+      "visible": false
+    },
+    {
+      "id": "teacher_19_case_2",
+      "problem_id": "teacher_19",
+      "input": "([)]",
+      "expected_output": "INVALID",
+      "visible": false
+    },
+    {
+      "id": "teacher_19_case_3",
+      "problem_id": "teacher_19",
+      "input": "((()))",
+      "expected_output": "VALID",
+      "visible": false
+    },
+    {
+      "id": "teacher_19_case_4",
+      "problem_id": "teacher_19",
+      "input": "{[}]",
+      "expected_output": "INVALID",
+      "visible": false
+    },
+    {
+      "id": "teacher_19_case_5",
+      "problem_id": "teacher_19",
+      "input": "()[]{}",
+      "expected_output": "VALID",
+      "visible": false
+    },
+    {
+      "id": "teacher_20_sample",
+      "problem_id": "teacher_20",
+      "input": "4\n5 2 8 3",
+      "expected_output": "0 5 7 15",
+      "visible": true
+    },
+    {
+      "id": "teacher_20_case_1",
+      "problem_id": "teacher_20",
+      "input": "3\n4 4 4",
+      "expected_output": "0 4 8",
+      "visible": false
+    },
+    {
+      "id": "teacher_20_case_2",
+      "problem_id": "teacher_20",
+      "input": "1\n10",
+      "expected_output": "0",
+      "visible": false
+    },
+    {
+      "id": "teacher_20_case_3",
+      "problem_id": "teacher_20",
+      "input": "3\n1 1 1",
+      "expected_output": "0 1 2",
+      "visible": false
+    },
+    {
+      "id": "teacher_20_case_4",
+      "problem_id": "teacher_20",
+      "input": "5\n2 4 6 8 10",
+      "expected_output": "0 2 6 12 20",
+      "visible": false
+    },
+    {
+      "id": "teacher_20_case_5",
+      "problem_id": "teacher_20",
+      "input": "2\n0 5",
+      "expected_output": "0 0",
+      "visible": false
+    },
+    {
+      "id": "teacher_21_sample",
+      "problem_id": "teacher_21",
+      "input": "5\nAPPEND 1\nAPPEND 2\nPREPEND 0\nAPPEND 3\nDELETE 2",
+      "expected_output": "0 1 3",
+      "visible": true
+    },
+    {
+      "id": "teacher_21_case_1",
+      "problem_id": "teacher_21",
+      "input": "6\nAPPEND 10\nAPPEND 20\nPREPEND 5\nAPPEND 30\nDELETE 20\nPREPEND 1",
+      "expected_output": "1 5 10 30",
+      "visible": false
+    },
+    {
+      "id": "teacher_21_case_2",
+      "problem_id": "teacher_21",
+      "input": "3\nAPPEND 5\nDELETE 5\nDELETE 5",
+      "expected_output": "EMPTY",
+      "visible": false
+    },
+    {
+      "id": "teacher_21_case_3",
+      "problem_id": "teacher_21",
+      "input": "4\nPREPEND 1\nPREPEND 2\nPREPEND 3\nAPPEND 4",
+      "expected_output": "3 2 1 4",
+      "visible": false
+    },
+    {
+      "id": "teacher_21_case_4",
+      "problem_id": "teacher_21",
+      "input": "2\nAPPEND 9\nDELETE 100",
+      "expected_output": "9",
+      "visible": false
+    },
+    {
+      "id": "teacher_21_case_5",
+      "problem_id": "teacher_21",
+      "input": "6\nAPPEND 1\nAPPEND 1\nAPPEND 1\nDELETE 1\nDELETE 1\nDELETE 1",
+      "expected_output": "EMPTY",
+      "visible": false
+    },
+    {
+      "id": "teacher_22_sample",
+      "problem_id": "teacher_22",
+      "input": "3\n4 6 8",
+      "expected_output": "2 24",
+      "visible": true
+    },
+    {
+      "id": "teacher_22_case_1",
+      "problem_id": "teacher_22",
+      "input": "4\n10 20 30 40",
+      "expected_output": "10 120",
+      "visible": false
+    },
+    {
+      "id": "teacher_22_case_2",
+      "problem_id": "teacher_22",
+      "input": "2\n7 5",
+      "expected_output": "1 35",
+      "visible": false
+    },
+    {
+      "id": "teacher_22_case_3",
+      "problem_id": "teacher_22",
+      "input": "4\n2 4 8 16",
+      "expected_output": "2 16",
+      "visible": false
+    },
+    {
+      "id": "teacher_22_case_4",
+      "problem_id": "teacher_22",
+      "input": "3\n12 18 24",
+      "expected_output": "6 72",
+      "visible": false
+    },
+    {
+      "id": "teacher_22_case_5",
+      "problem_id": "teacher_22",
+      "input": "5\n3 6 9 12 15",
+      "expected_output": "3 180",
+      "visible": false
+    },
+    {
+      "id": "teacher_23_sample",
+      "problem_id": "teacher_23",
+      "input": "2 2 2\n1 2\n3 4\n5 6\n7 8",
+      "expected_output": "19 22\n43 50",
+      "visible": true
+    },
+    {
+      "id": "teacher_23_case_1",
+      "problem_id": "teacher_23",
+      "input": "2 2 2\n2 0\n1 3\n4 1\n0 2",
+      "expected_output": "8 2\n4 7",
+      "visible": false
+    },
+    {
+      "id": "teacher_23_case_2",
+      "problem_id": "teacher_23",
+      "input": "1 3 1\n1 2 3\n4\n5\n6",
+      "expected_output": "32",
+      "visible": false
+    },
+    {
+      "id": "teacher_23_case_3",
+      "problem_id": "teacher_23",
+      "input": "2 3 2\n1 0 2\n-1 3 1\n3 1\n2 1\n1 0",
+      "expected_output": "5 1\n4 2",
+      "visible": false
+    },
+    {
+      "id": "teacher_23_case_4",
+      "problem_id": "teacher_23",
+      "input": "3 1 3\n2\n1\n3\n1 4 5",
+      "expected_output": "2 8 10\n1 4 5\n3 12 15",
+      "visible": false
+    },
+    {
+      "id": "teacher_23_case_5",
+      "problem_id": "teacher_23",
+      "input": "2 2 3\n0 1\n1 0\n2 3 4\n5 6 7",
+      "expected_output": "5 6 7\n2 3 4",
+      "visible": false
+    },
+    {
+      "id": "teacher_24_sample",
+      "problem_id": "teacher_24",
+      "input": "abcde\nace",
+      "expected_output": "3",
+      "visible": true
+    },
+    {
+      "id": "teacher_24_case_1",
+      "problem_id": "teacher_24",
+      "input": "abcdef\nfbd",
+      "expected_output": "2",
+      "visible": false
+    },
+    {
+      "id": "teacher_24_case_2",
+      "problem_id": "teacher_24",
+      "input": "abc\nabc",
+      "expected_output": "3",
+      "visible": false
+    },
+    {
+      "id": "teacher_24_case_3",
+      "problem_id": "teacher_24",
+      "input": "abc\ndef",
+      "expected_output": "0",
+      "visible": false
+    },
+    {
+      "id": "teacher_24_case_4",
+      "problem_id": "teacher_24",
+      "input": "aggtab\ngxtxayb",
+      "expected_output": "4",
+      "visible": false
+    },
+    {
+      "id": "teacher_24_case_5",
+      "problem_id": "teacher_24",
+      "input": "programming\ngaming",
+      "expected_output": "6",
+      "visible": false
+    },
+    {
+      "id": "teacher_25_sample",
+      "problem_id": "teacher_25",
+      "input": "6\neat tea tan ate nat bat",
+      "expected_output": "eat tea ate\ntan nat\nbat",
+      "visible": true
+    },
+    {
+      "id": "teacher_25_case_1",
+      "problem_id": "teacher_25",
+      "input": "7\ncinema iceman act cat rat art tar",
+      "expected_output": "cinema iceman\nact cat\nrat art tar",
+      "visible": false
+    },
+    {
+      "id": "teacher_25_case_2",
+      "problem_id": "teacher_25",
+      "input": "4\nabc bca cab bad",
+      "expected_output": "abc bca cab\nbad",
+      "visible": false
+    },
+    {
+      "id": "teacher_25_case_3",
+      "problem_id": "teacher_25",
+      "input": "3\nxyz zyx abc",
+      "expected_output": "xyz zyx\nabc",
+      "visible": false
+    },
+    {
+      "id": "teacher_25_case_4",
+      "problem_id": "teacher_25",
+      "input": "5\nlisten silent enlist google gogole",
+      "expected_output": "listen silent enlist\ngoogle gogole",
+      "visible": false
+    },
+    {
+      "id": "teacher_25_case_5",
+      "problem_id": "teacher_25",
+      "input": "1\nsolo",
+      "expected_output": "solo",
+      "visible": false
+    },
+    {
+      "id": "teacher_26_sample",
+      "problem_id": "teacher_26",
+      "input": "3\nSomchai 80 70 90\nSomsri 90 90 90\nAnan 80 70 90",
+      "expected_output": "Somsri 90.00\nAnan 80.00\nSomchai 80.00",
+      "visible": true
+    },
+    {
+      "id": "teacher_26_case_1",
+      "problem_id": "teacher_26",
+      "input": "3\nNina 88 92 79\nOm 75 60 65\nPim 88 92 79",
+      "expected_output": "Nina 86.33\nPim 86.33\nOm 66.67",
+      "visible": false
+    },
+    {
+      "id": "teacher_26_case_2",
+      "problem_id": "teacher_26",
+      "input": "2\nA 100 100 100\nB 0 0 0",
+      "expected_output": "A 100.00\nB 0.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_26_case_3",
+      "problem_id": "teacher_26",
+      "input": "4\nJohn 60 60 60\nJane 70 80 90\nJim 70 80 90\nJill 50 50 50",
+      "expected_output": "Jane 80.00\nJim 80.00\nJohn 60.00\nJill 50.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_26_case_4",
+      "problem_id": "teacher_26",
+      "input": "1\nSolo 33 33 34",
+      "expected_output": "Solo 33.33",
+      "visible": false
+    },
+    {
+      "id": "teacher_26_case_5",
+      "problem_id": "teacher_26",
+      "input": "5\nA 90 80 70\nB 70 80 90\nC 80 80 80\nD 60 70 80\nE 100 90 80",
+      "expected_output": "E 90.00\nA 80.00\nB 80.00\nC 80.00\nD 70.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_27_sample",
+      "problem_id": "teacher_27",
+      "input": "5\n2 4 4 4 5",
+      "expected_output": "3.80 0.96 0.98",
+      "visible": true
+    },
+    {
+      "id": "teacher_27_case_1",
+      "problem_id": "teacher_27",
+      "input": "4\n10 12 14 16",
+      "expected_output": "13.00 5.00 2.24",
+      "visible": false
+    },
+    {
+      "id": "teacher_27_case_2",
+      "problem_id": "teacher_27",
+      "input": "4\n1 2 3 4",
+      "expected_output": "2.50 1.25 1.12",
+      "visible": false
+    },
+    {
+      "id": "teacher_27_case_3",
+      "problem_id": "teacher_27",
+      "input": "3\n10 10 10",
+      "expected_output": "10.00 0.00 0.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_27_case_4",
+      "problem_id": "teacher_27",
+      "input": "6\n1 2 3 4 5 6",
+      "expected_output": "3.50 2.92 1.71",
+      "visible": false
+    },
+    {
+      "id": "teacher_27_case_5",
+      "problem_id": "teacher_27",
+      "input": "2\n0 100",
+      "expected_output": "50.00 2500.00 50.00",
+      "visible": false
+    },
+    {
+      "id": "teacher_28_sample",
+      "problem_id": "teacher_28",
+      "input": "2024 2 28",
+      "expected_output": "LEAP\n2024 2 29",
+      "visible": true
+    },
+    {
+      "id": "teacher_28_case_1",
+      "problem_id": "teacher_28",
+      "input": "2021 4 30",
+      "expected_output": "NOT LEAP\n2021 5 1",
+      "visible": false
+    },
+    {
+      "id": "teacher_28_case_2",
+      "problem_id": "teacher_28",
+      "input": "2023 2 28",
+      "expected_output": "NOT LEAP\n2023 3 1",
+      "visible": false
+    },
+    {
+      "id": "teacher_28_case_3",
+      "problem_id": "teacher_28",
+      "input": "2000 12 31",
+      "expected_output": "LEAP\n2001 1 1",
+      "visible": false
+    },
+    {
+      "id": "teacher_28_case_4",
+      "problem_id": "teacher_28",
+      "input": "1900 2 28",
+      "expected_output": "NOT LEAP\n1900 3 1",
+      "visible": false
+    },
+    {
+      "id": "teacher_28_case_5",
+      "problem_id": "teacher_28",
+      "input": "2024 1 31",
+      "expected_output": "LEAP\n2024 2 1",
+      "visible": false
+    },
+    {
+      "id": "teacher_29_sample",
+      "problem_id": "teacher_29",
+      "input": "7\n1 3 5 7 9 11 13\n9",
+      "expected_output": "4",
+      "visible": true
+    },
+    {
+      "id": "teacher_29_case_1",
+      "problem_id": "teacher_29",
+      "input": "8\n2 4 6 8 10 12 14 16\n15",
+      "expected_output": "-1",
+      "visible": false
+    },
+    {
+      "id": "teacher_29_case_2",
+      "problem_id": "teacher_29",
+      "input": "5\n2 4 6 8 10\n5",
+      "expected_output": "-1",
+      "visible": false
+    },
+    {
+      "id": "teacher_29_case_3",
+      "problem_id": "teacher_29",
+      "input": "1\n5\n5",
+      "expected_output": "0",
+      "visible": false
+    },
+    {
+      "id": "teacher_29_case_4",
+      "problem_id": "teacher_29",
+      "input": "6\n-10 -5 0 5 10 15\n-10",
+      "expected_output": "0",
+      "visible": false
+    },
+    {
+      "id": "teacher_29_case_5",
+      "problem_id": "teacher_29",
+      "input": "10\n1 2 3 4 5 6 7 8 9 10\n10",
+      "expected_output": "9",
+      "visible": false
+    },
+    {
+      "id": "teacher_30_sample",
+      "problem_id": "teacher_30",
+      "input": "2",
+      "expected_output": "Move disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nTotal moves: 3",
+      "visible": true
+    },
+    {
+      "id": "teacher_30_case_1",
+      "problem_id": "teacher_30",
+      "input": "4",
+      "expected_output": "Move disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nMove disk 3 from A to B\nMove disk 1 from C to A\nMove disk 2 from C to B\nMove disk 1 from A to B\nMove disk 4 from A to C\nMove disk 1 from B to C\nMove disk 2 from B to A\nMove disk 1 from C to A\nMove disk 3 from B to C\nMove disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nTotal moves: 15",
+      "visible": false
+    },
+    {
+      "id": "teacher_30_case_2",
+      "problem_id": "teacher_30",
+      "input": "1",
+      "expected_output": "Move disk 1 from A to C\nTotal moves: 1",
+      "visible": false
+    },
+    {
+      "id": "teacher_30_case_3",
+      "problem_id": "teacher_30",
+      "input": "3",
+      "expected_output": "Move disk 1 from A to C\nMove disk 2 from A to B\nMove disk 1 from C to B\nMove disk 3 from A to C\nMove disk 1 from B to A\nMove disk 2 from B to C\nMove disk 1 from A to C\nTotal moves: 7",
+      "visible": false
+    },
+    {
+      "id": "teacher_30_case_4",
+      "problem_id": "teacher_30",
+      "input": "6",
+      "expected_output": "Move disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nMove disk 3 from A to B\nMove disk 1 from C to A\nMove disk 2 from C to B\nMove disk 1 from A to B\nMove disk 4 from A to C\nMove disk 1 from B to C\nMove disk 2 from B to A\nMove disk 1 from C to A\nMove disk 3 from B to C\nMove disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nMove disk 5 from A to B\nMove disk 1 from C to A\nMove disk 2 from C to B\nMove disk 1 from A to B\nMove disk 3 from C to A\nMove disk 1 from B to C\nMove disk 2 from B to A\nMove disk 1 from C to A\nMove disk 4 from C to B\nMove disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nMove disk 3 from A to B\nMove disk 1 from C to A\nMove disk 2 from C to B\nMove disk 1 from A to B\nMove disk 6 from A to C\nMove disk 1 from B to C\nMove disk 2 from B to A\nMove disk 1 from C to A\nMove disk 3 from B to C\nMove disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nMove disk 4 from B to A\nMove disk 1 from C to A\nMove disk 2 from C to B\nMove disk 1 from A to B\nMove disk 3 from C to A\nMove disk 1 from B to C\nMove disk 2 from B to A\nMove disk 1 from C to A\nMove disk 5 from B to C\nMove disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nMove disk 3 from A to B\nMove disk 1 from C to A\nMove disk 2 from C to B\nMove disk 1 from A to B\nMove disk 4 from A to C\nMove disk 1 from B to C\nMove disk 2 from B to A\nMove disk 1 from C to A\nMove disk 3 from B to C\nMove disk 1 from A to B\nMove disk 2 from A to C\nMove disk 1 from B to C\nTotal moves: 63",
+      "visible": false
+    },
+    {
+      "id": "teacher_30_case_5",
+      "problem_id": "teacher_30",
+      "input": "5",
+      "expected_output": "Move disk 1 from A to C\nMove disk 2 from A to B\nMove disk 1 from C to B\nMove disk 3 from A to C\nMove disk 1 from B to A\nMove disk 2 from B to C\nMove disk 1 from A to C\nMove disk 4 from A to B\nMove disk 1 from C to B\nMove disk 2 from C to A\nMove disk 1 from B to A\nMove disk 3 from C to B\nMove disk 1 from A to C\nMove disk 2 from A to B\nMove disk 1 from C to B\nMove disk 5 from A to C\nMove disk 1 from B to A\nMove disk 2 from B to C\nMove disk 1 from A to C\nMove disk 3 from B to A\nMove disk 1 from C to B\nMove disk 2 from C to A\nMove disk 1 from B to A\nMove disk 4 from B to C\nMove disk 1 from A to C\nMove disk 2 from A to B\nMove disk 1 from C to B\nMove disk 3 from A to C\nMove disk 1 from B to A\nMove disk 2 from B to C\nMove disk 1 from A to C\nTotal moves: 31",
+      "visible": false
+    }
+  ]
+}

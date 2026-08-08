@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { appState } from "$lib/state.svelte";
+  import Avatar from "$lib/components/Avatar.svelte";
   import ProgressBar from "$lib/components/ProgressBar.svelte";
 
   let activeUser = $derived(appState.currentUser);
@@ -135,11 +136,7 @@
             <div class="presence-user-row">
               <div class="presence-avatar-wrap">
                 <div class="avatar presence-avatar" aria-hidden="true">
-                  {#if user.avatar_url}
-                    <img src={user.avatar_url} alt="" loading="lazy" />
-                  {:else}
-                    {user.user_id.slice(0, 2).toUpperCase()}
-                  {/if}
+                  <Avatar src={user.avatar_url} name={user.user_id} />
                 </div>
                 <span class="presence-online-dot" aria-label="Online"></span>
               </div>

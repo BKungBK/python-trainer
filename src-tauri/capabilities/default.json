@@ -8,6 +8,7 @@
     "opener:default",
     "window-state:default",
     "updater:default",
+    "mcp-bridge:default",
     "process:allow-restart",
     "core:window:allow-start-dragging",
     "core:window:allow-close",

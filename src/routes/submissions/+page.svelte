@@ -126,7 +126,8 @@
     "Optimization": "การเพิ่มประสิทธิภาพ",
     "Data Parsing": "การแจกแจงข้อมูล",
     "Statistics": "สถิติ",
-    "Signal Processing": "การประมวลผลสัญญาณ"
+    "Signal Processing": "การประมวลผลสัญญาณ",
+    "Teacher Problems": "โจทย์ของอาจารย์"
   };
 </script>
 

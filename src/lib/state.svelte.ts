@@ -7,6 +7,7 @@ import { dev } from "$app/environment";
 
 class AppState {
   currentUser = $state<string | null>(null);
+  avatarUrl = $state<string | null>(null);
   onlineUsers = $state<any[]>([]);
   syncStatus = $state<string>("Idle"); // "Idle", "Syncing", "Success", "Error"
   needsRefresh = $state<number>(0);
@@ -119,6 +120,7 @@ class AppState {
       // Legacy installs stored the two fixed profile IDs. Ask for a real name once.
       const savedName = active && active !== "NG" && active !== "MR3" ? active : null;
       this.currentUser = savedName;
+      this.avatarUrl = null;
       return savedName;
     } catch (e) {
       console.error("Failed to check active user:", e);
@@ -147,6 +149,7 @@ class AppState {
 
       await invoke("select_user", { userId: userName });
       this.currentUser = userName;
+      this.avatarUrl = null;
 
       // Clear all caches for the new user
       this.dailyChallenge = null;
@@ -230,7 +233,10 @@ class AppState {
 
   async refreshOnlineUsers() {
     try {
-      this.onlineUsers = await invoke("get_user_statuses");
+      const statuses: any[] = await invoke("get_user_statuses");
+      this.onlineUsers = statuses;
+      this.avatarUrl =
+        statuses.find((user) => user.user_id === this.currentUser)?.avatar_url ?? null;
     } catch (e) {
       console.error("Failed to load user statuses:", e);
     }
@@ -239,6 +245,7 @@ class AppState {
   async setAvatarUrl(avatarUrl: string | null): Promise<boolean> {
     try {
       await invoke("set_avatar_url", { avatarUrl });
+      this.avatarUrl = avatarUrl;
       if (this.currentUser) {
         this.onlineUsers = this.onlineUsers.map((user) =>
           user.user_id === this.currentUser ? { ...user, avatar_url: avatarUrl } : user,

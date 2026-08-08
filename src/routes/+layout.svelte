@@ -7,15 +7,14 @@
   import { fade, scale } from "svelte/transition";
   import { smoothScroll } from "$lib/actions/smoothScroll";
   import { appState } from "$lib/state.svelte";
+  import Avatar from "$lib/components/Avatar.svelte";
   import "../index.css";
 
   let { children } = $props();
 
   // State variables
   let currentUser = $derived(appState.currentUser);
-  let activeAvatarUrl = $derived(
-    appState.onlineUsers.find((user: any) => user.user_id === currentUser)?.avatar_url ?? null,
-  );
+  let activeAvatarUrl = $derived(appState.avatarUrl);
   let syncStatus = $derived(appState.syncStatus);
 
   let isMaximized = $state(false);
@@ -181,6 +180,11 @@
         appState.showProfileSelector = true;
       }
 
+      // The window starts hidden so the startup work does not flash an
+      // uninitialized shell. Reveal it once the first app state is ready.
+      await getCurrentWindow().show();
+      await getCurrentWindow().setFocus();
+
       // Setup window state check and listeners
       const appWindow = getCurrentWindow();
       isMaximized = await appWindow.isMaximized();
@@ -262,30 +266,76 @@
     avatarError = null;
   }
 
-  async function uploadAvatar(file: File, userName: string): Promise<boolean> {
+  async function uploadAvatar(file: File): Promise<boolean> {
+    let client: ReturnType<typeof createClient> | null = null;
+    let uploadedPath: string | null = null;
+
     try {
       const [url, anonKey]: [string, string] = await invoke("get_supabase_config");
       if (!url || !anonKey) throw new Error("Supabase is not configured");
 
-      const client = presenceClient ?? createClient(url, anonKey);
+      const storageClient = presenceClient ?? createClient(url, anonKey);
+      client = storageClient;
       const extension = avatarExtensions[file.type];
-      const path = `${encodeURIComponent(userName)}/${crypto.randomUUID()}.${extension}`;
-      const { error: uploadError } = await client.storage.from("avatars").upload(path, file, {
+      if (!extension) throw new Error("Unsupported avatar file type");
+
+      // User names may contain Unicode, spaces, or path separators. They do
+      // not belong in a Storage path; the saved public URL is the identity.
+      uploadedPath = `${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await storageClient.storage.from("avatars").upload(uploadedPath, file, {
         cacheControl: "3600",
         contentType: file.type,
         upsert: false,
       });
       if (uploadError) throw uploadError;
 
-      const { data } = client.storage.from("avatars").getPublicUrl(path);
+      const { data } = storageClient.storage.from("avatars").getPublicUrl(uploadedPath);
+      if (!data.publicUrl.startsWith("https://")) {
+        throw new Error("Supabase returned an unsafe avatar URL");
+      }
+
+      // Upload success alone does not prove the bucket is public, the read
+      // policy is correct, or the Tauri CSP allows the image. Verify this URL
+      // before writing it to user_status.
+      if (!(await canLoadImage(data.publicUrl))) {
+        throw new Error(
+          "Avatar uploaded but cannot be read. Check the avatars bucket visibility and policy.",
+        );
+      }
+
       const saved = await appState.setAvatarUrl(data.publicUrl);
       if (!saved) throw new Error("Avatar profile could not be saved");
       return true;
     } catch (error) {
+      if (client && uploadedPath) {
+        // Avoid orphaned objects when verification or database persistence fails.
+        await client.storage.from("avatars").remove([uploadedPath]).catch(() => undefined);
+      }
       console.error("Avatar upload failed:", error);
-      avatarError = "อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+      avatarError = "อัปโหลดรูปไม่สำเร็จ ตรวจสอบการตั้งค่า Storage แล้วลองใหม่";
       return false;
     }
+  }
+
+  function canLoadImage(url: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const image = new Image();
+      const timeout = window.setTimeout(() => {
+        image.onload = null;
+        image.onerror = null;
+        resolve(false);
+      }, 10_000);
+
+      image.onload = () => {
+        window.clearTimeout(timeout);
+        resolve(true);
+      };
+      image.onerror = () => {
+        window.clearTimeout(timeout);
+        resolve(false);
+      };
+      image.src = url;
+    });
   }
 
   async function selectProfile(includeAvatar = true) {
@@ -308,7 +358,7 @@
     }
 
     if (includeAvatar && selectedAvatarFile) {
-      const uploaded = await uploadAvatar(selectedAvatarFile, name);
+      const uploaded = await uploadAvatar(selectedAvatarFile);
       if (!uploaded) {
         appState.showProfileSelector = true;
         profileSaving = false;
@@ -581,7 +631,9 @@
           class="sb-user"
           onclick={openProfileSelector}
         >
-          <div class="avatar">{currentUser}</div>
+          <div class="avatar">
+            <Avatar src={activeAvatarUrl} name={currentUser} />
+          </div>
           <div class="sb-user-info">
             <div class="sb-user-name">{currentUser}</div>
             <div class="sb-user-status">
@@ -715,13 +767,13 @@
           aria-label="เลือกรูปโปรไฟล์"
         >
           <span class="profile-avatar-media">
-            {#if avatarPreviewUrl}
-              <img src={avatarPreviewUrl} alt="ตัวอย่างรูปโปรไฟล์" />
-            {:else if profileName.trim()}
-              <span class="profile-avatar-initial" aria-hidden="true">{profileName.trim().charAt(0).toLocaleUpperCase()}</span>
-            {:else}
-              <span aria-hidden="true">?</span>
-            {/if}
+            <Avatar
+              src={avatarPreviewUrl}
+              name={profileName}
+              alt="ตัวอย่างรูปโปรไฟล์"
+              fallbackClass="profile-avatar-initial"
+              loading="eager"
+            />
           </span>
           <span class="profile-avatar-edit" aria-hidden="true">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
