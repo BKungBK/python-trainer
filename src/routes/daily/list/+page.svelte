@@ -545,10 +545,15 @@
     align-items: center;
     align-self: flex-start;
     gap: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
     color: var(--accent-blue);
+    font: inherit;
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
+    appearance: none;
   }
 
   .featured-toggle svg {
