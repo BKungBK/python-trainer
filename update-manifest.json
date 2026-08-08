@@ -1,11 +1,11 @@
 {
-  "version": "1.0.7",
-  "notes": "Redesigned daily problem cards, teacher problem catalog, and profile updates.",
-  "pub_date": "2026-08-08T00:00:00Z",
+  "version": "1.0.8",
+  "notes": "แก้สถานะ Presence ให้แสดง Online, Idle และกำลังแก้โจทย์ถูกต้อง พร้อมเพิ่มชุดโจทย์อาจารย์ 30 ข้อและ test cases ครบถ้วน",
+  "pub_date": "2026-08-08T11:35:56.3210390Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q0ZTMEhOL2dycWY2MGNRdWRManN1OVcxWk04bitVZHhJSzdlaG1LUlJPV0w1UEZCVTJDY2hQV0NrU3kvVkZQOXNLeU0rL1lCQU12bmtONzhUQTNaMGdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MTg1MDg4CWZpbGU6UHl0aG9uIFRyYWluZXIgQnkgQkt1bmdCS18xLjAuN194NjQtc2V0dXAuZXhlCkU0YlorZW5EbFIzUFJPbWpHVHl2OHFKVlRHWDNMOEszRzEyZHd3Q1QrdmFpNTNVSDk2S2RvL1pBclFoSmdlZ2JVRnByWjZiaUtHTWRnTEpPNVZnY0J3PT0K",
-      "url": "https://github.com/BKungBK/python-trainer/releases/download/v1.0.7/Python.Trainer.By.BKungBK_1.0.7_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q0w3a2hGbk9zbEhwVFFlMlBlUUo0SXlVbVNVSFFnWEk3NXhkRFRKcmV0Y2ZrUlROdUZ1UWhud285dG1TenNOTGxJWjRsZTJyNkl0ZHpmYjR0ODlScFFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MTg4OTI2CWZpbGU6UHl0aG9uIFRyYWluZXIgQnkgQkt1bmdCS18xLjAuOF94NjQtc2V0dXAuZXhlCndwQlJtYnJSQUFFbjFwVzZRTTRFSUZxTTdXaDJaLzVBUTk0RDZJem5COGUrMEc5TlNuWTZuNWVJbUg4TlZVQmVNcW9EUVU3YzRZejFCeFBVVng5TkJ3PT0K",
+      "url": "https://github.com/BKungBK/python-trainer/releases/download/v1.0.8/Python.Trainer.By.BKungBK_1.0.8_x64-setup.exe"
     }
   }
 }

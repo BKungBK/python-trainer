@@ -27,6 +27,23 @@
   let avatarError = $state<string | null>(null);
   let profileSaving = $state(false);
 
+  const INACTIVITY_TIMEOUT_MS = 60 * 1000;
+  const CURRENT_PRESENCE_META = {
+    Online: { label: "ออนไลน์", tone: "online" },
+    Idle: { label: "ไม่ได้ใช้งาน", tone: "idle" },
+    Solving: { label: "กำลังแก้โจทย์", tone: "solving" },
+  } as const;
+
+  type CurrentPresenceStatus = keyof typeof CURRENT_PRESENCE_META;
+  let currentPresenceStatus = $derived<CurrentPresenceStatus>(
+    isIdle
+      ? "Idle"
+      : $page.url.pathname === "/daily" && $page.url.searchParams.has("problem")
+        ? "Solving"
+        : "Online",
+  );
+  let currentPresenceMeta = $derived(CURRENT_PRESENCE_META[currentPresenceStatus]);
+
   const avatarMimeTypes = new Set([
     "image/jpeg",
     "image/png",
@@ -94,7 +111,7 @@
     inactivityTimer = setTimeout(() => {
       isIdle = true;
       runHeartbeat();
-    }, 10 * 1000); // 15 minutes
+    }, INACTIVITY_TIMEOUT_MS);
   }
 
   // Rotating developer-centric submessages during loading
@@ -389,9 +406,10 @@
     let currentProblemId: string | null = null;
 
     const pathname = $page.url.pathname;
-    if (pathname === "/daily") {
+    const problemId = $page.url.searchParams.get("problem");
+    if (pathname === "/daily" && problemId) {
       status = "Solving Problem";
-      currentProblemId = $page.url.searchParams.get("problem");
+      currentProblemId = problemId;
     }
 
     if (isIdle) {
@@ -637,8 +655,8 @@
           <div class="sb-user-info">
             <div class="sb-user-name">{currentUser}</div>
             <div class="sb-user-status">
-              <div class="status-dot {isIdle ? 'idle' : 'online'}"></div>
-              <span>{isIdle ? "ไม่ได้ใช้งาน" : "ออนไลน์"}</span>
+              <div class="status-dot {currentPresenceMeta.tone}"></div>
+              <span>{currentPresenceMeta.label}</span>
             </div>
           </div>
           <svg

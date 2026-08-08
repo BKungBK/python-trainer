@@ -10,13 +10,41 @@
   let dailyRequired = $state<number>(0);
   let loading = $state(true);
   let onlineUsers = $derived(appState.onlineUsers);
-  let visibleOnlineUsers = $derived(onlineUsers.filter((user) => isUserOnline(user)));
+  let presenceNow = $state(Date.now());
+  let visiblePresenceUsers = $derived(onlineUsers.filter((user) => isUserPresent(user)));
 
-  function isUserOnline(user: any) {
+  const PRESENCE_STALE_MS = 45_000;
+
+  type PresenceTone = "online" | "idle" | "solving" | "offline";
+  type PresenceMeta = {
+    label: string;
+    tone: PresenceTone;
+  };
+
+  const PRESENCE_META: Record<string, PresenceMeta> = {
+    Online: { label: "ออนไลน์", tone: "online" },
+    Idle: { label: "ไม่ได้ใช้งาน", tone: "idle" },
+    "Solving Problem": { label: "กำลังแก้โจทย์", tone: "solving" },
+    Offline: { label: "ออฟไลน์", tone: "offline" },
+  };
+
+  function getPresenceMeta(status: unknown): PresenceMeta {
+    return PRESENCE_META[String(status ?? "")] ?? PRESENCE_META.Online;
+  }
+
+  function isUserPresent(user: any) {
     if (user.status === "Offline") return false;
     const lastActive = Date.parse(user.last_active ?? "");
-    return Number.isFinite(lastActive) && Date.now() - lastActive <= 45_000;
+    return Number.isFinite(lastActive) && presenceNow - lastActive <= PRESENCE_STALE_MS;
   }
+
+  onMount(() => {
+    const presenceClock = window.setInterval(() => {
+      presenceNow = Date.now();
+    }, 15_000);
+
+    return () => window.clearInterval(presenceClock);
+  });
 
   // Format today's date
   const todayStr = new Intl.DateTimeFormat('th-TH', { 
@@ -124,21 +152,25 @@
       </div>
     </div>
 
-    {#if visibleOnlineUsers.length > 0}
+    {#if visiblePresenceUsers.length > 0}
       <section class="user-presence-section" aria-label="ผู้ใช้งาน">
         <div class="section-heading">
           <span class="section-kicker">PRESENCE</span>
           <span class="section-separator" aria-hidden="true">-</span>
-          <span class="section-count" aria-label="online users">{visibleOnlineUsers.length}</span>
+          <span class="section-count" aria-label="present users">{visiblePresenceUsers.length}</span>
         </div>
         <div class="user-presence-list">
-          {#each visibleOnlineUsers as user (user.user_id)}
+          {#each visiblePresenceUsers as user (user.user_id)}
+            {@const presence = getPresenceMeta(user.status)}
             <div class="presence-user-row">
               <div class="presence-avatar-wrap">
                 <div class="avatar presence-avatar" aria-hidden="true">
                   <Avatar src={user.avatar_url} name={user.user_id} />
                 </div>
-                <span class="presence-online-dot" aria-label="Online"></span>
+                <span
+                  class="presence-online-dot presence-dot-{presence.tone}"
+                  aria-label={presence.label}
+                ></span>
               </div>
               <div class="fc-info">
                 <div class="fc-name">
@@ -146,7 +178,7 @@
                   {#if user.user_id === activeUser}<span class="presence-you">คุณ</span>{/if}
                 </div>
               </div>
-              <span class="presence-status-badge">Online</span>
+              <span class="presence-status-badge presence-badge-{presence.tone}">{presence.label}</span>
             </div>
           {/each}
         </div>
