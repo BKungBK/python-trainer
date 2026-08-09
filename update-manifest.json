@@ -1,11 +1,11 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "notes": "ปรับปุ่มดูโจทย์อาจารย์ให้ตรง reference โดยไม่กระทบปุ่มอื่น",
-  "pub_date": "2026-08-08T16:41:34.8545035Z",
+  "pub_date": "2026-08-09T02:55:38.114Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q0Z5ZmdPVG5pU2lRRU0ya29LTmhnNEo4cU50QnNhTjZXMHIvcTFoYXI4UUdrNzByQWlCaFZPRmZRSS9MY1RJMlBaZmZOY1I4enpUMWM3c2RKVkxwS3dVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MjA3Mjc2CWZpbGU6UHl0aG9uIFRyYWluZXIgQnkgQkt1bmdCS18xLjEuMF94NjQtc2V0dXAuZXhlClEyem01bmpUWU15UG9Ca0tUdGFueGkyMjRHYmRaRlVuR3R4SVRUZG1PeW56UWRTN1RYTnhQdjNSTDJhb3ZiOGgzOHUydlFINDR5S2dsMytCMisxTkJBPT0K",
-      "url": "https://github.com/BKungBK/python-trainer/releases/download/v1.1.0/Python.Trainer.By.BKungBK_1.1.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUWTBQSk5kTkI2Q0h4K1J1c1paR29vbllOTmtGZHkrclJiUU0xZElGdWZnL1lsQUFSVng2MktxdUNVZWJGcG5PZTEvSjRiTWNLVVFUL05TNWQwNWlpSVhWWjYyWEVpeWdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MjQ0MTEzCWZpbGU6UHl0aG9uIFRyYWluZXIgQnkgQkt1bmdCS18xLjEuMV94NjQtc2V0dXAuZXhlCitNOWphWnR0bmFZekJXYlJHU1lUWEhkTjlJR2dmWGVodFNKQ201T3BmVnRSSFNYMUFvSWJrVURRVkJBNEtueTZmd0tFc1o3NkhwSUFGd3dyL3oyTEF3PT0K",
+      "url": "https://github.com/BKungBK/python-trainer/releases/download/v1.1.1/Python%20Trainer%20By%20BKungBK_1.1.1_x64-setup.exe"
     }
   }
 }

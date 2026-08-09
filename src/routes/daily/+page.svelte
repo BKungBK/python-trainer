@@ -737,15 +737,9 @@
         <!-- Editor wrapper -->
         <div class="editor-area">
           <div class="editor-topbar">
-            <div class="editor-tabs" role="tablist" aria-label="Open files">
-              <button class="etab active" role="tab" aria-selected="true" type="button">
-                <span class="file-dot" aria-hidden="true"></span>
-                <span>solution.py</span>
-                {#if code.trim()}<span class="etab-dirty" aria-label="Unsaved local changes">●</span>{/if}
-              </button>
-            </div>
-            <div class="editor-topbar-spacer"></div>
-            <div class="editor-runtime">
+            <div class="etab active">solution.py</div>
+            <div style="flex: 1;"></div>
+            <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
               <button 
                 class="btn-spark-toggle" 
                 class:active={appState.isPowerModeActive} 
@@ -758,8 +752,6 @@
                 </svg>
               </button>
               <span>Python 3</span>
-              <span class="runtime-divider" aria-hidden="true"></span>
-              <span class="editor-shortcut-hint">Tab indent · Ctrl+Enter run</span>
             </div>
           </div>
           

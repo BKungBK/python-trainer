@@ -11,6 +11,14 @@
   let editor: Monaco.editor.IStandaloneCodeEditor | null = null;
   let isDestroyed = false;
   let isUpdatingFromInside = false;
+  // Animation properties
+  let particles: any[] = [];
+  let animationId = 0;
+  let isRenderingParticles = false;
+  let resizeObserver: ResizeObserver | null = null;
+  let codeSyncFrame: number | null = null;
+  const MAX_PARTICLES = 120;
+
   type TypingCue = {
     label: string;
     tone: "keyword" | "builtin" | "function" | "constant" | "type";
@@ -20,12 +28,6 @@
   };
   let typingCue = $state<TypingCue | null>(null);
   let typingCueTimer: number | null = null;
-  
-  // Animation properties
-  let particles: any[] = [];
-  let animationId = 0;
-  let isRenderingParticles = false;
-  let resizeObserver: ResizeObserver | null = null;
 
   function spawnParticles(x: number, y: number) {
     if (!canvasEl) return;
@@ -40,8 +42,11 @@
         life: 1.0,
         decay: 0.015 + Math.random() * 0.015, // slower decay for smooth path
         size: 1.5 + Math.random() * 2.0,
-        color: ["#7aa2f7", "#bb9af7", "#7dcfff", "#9ece6a", "#ff9e64"][Math.floor(Math.random() * 5)]
+        color: Math.random() < 0.4 ? "#ffffff" : (Math.random() < 0.75 ? "#e0e0e0" : "#b8b8b8")
       });
+    }
+    if (particles.length > MAX_PARTICLES) {
+      particles.splice(0, particles.length - MAX_PARTICLES);
     }
     if (!isRenderingParticles) {
       isRenderingParticles = true;
@@ -160,6 +165,10 @@
         
         // Function definition matching
         [/(def\s+)([a-zA-Z_]\w*)/, ["keyword", "function.definition"]],
+
+        // Assignment targets and dotted properties get their own semantic tone.
+        [/[a-zA-Z_]\w*(?=\s*=)/, "variable"],
+        [/([.])([a-zA-Z_]\w*)/, ["delimiter", "property"]],
         
         // Function call matching (any identifier followed by '(')
         [
@@ -189,7 +198,7 @@
       ],
       whitespace: [
         [/\s+/, "white"],
-        [/(^#.*$)/, "comment"],
+        [/#.*$/, "comment"],
         [/'''/, "string", "@endDocString"],
         [/"""/, "string", "@endDblDocString"]
       ],
@@ -258,50 +267,106 @@
 
   const practiceRangeTheme: Monaco.editor.IStandaloneThemeData = {
     base: "vs-dark",
-    inherit: true,
+    inherit: false,
     rules: [
-      // Tokyo Night semantic syntax palette: color carries code meaning.
-      { token: "", foreground: "c0caf5" },
-      { token: "keyword", foreground: "bb9af7" },
-      { token: "keyword.control", foreground: "bb9af7" },
-      { token: "keyword.builtin", foreground: "2ac3de" },
-      { token: "keyword.constant", foreground: "ff9e64" },
-      { token: "keyword.predefined", foreground: "7dcfff" },
-      { token: "keyword.magic", foreground: "e0af68" },
-      { token: "function.call", foreground: "7aa2f7" },
-      { token: "function.definition", foreground: "7aa2f7" },
-      { token: "type.class", foreground: "73daca" },
-      { token: "identifier", foreground: "c0caf5" },
-      { token: "string", foreground: "9ece6a" },
-      { token: "string.escape", foreground: "ff9e64" },
-      { token: "comment", foreground: "565f89", fontStyle: "italic" },
-      { token: "number", foreground: "ff9e64" },
-      { token: "operator", foreground: "89ddff" },
-      { token: "delimiter", foreground: "a9b1d6" },
-      { token: "delimiter.curly", foreground: "bb9af7" },
-      { token: "delimiter.bracket", foreground: "e0af68" },
-      { token: "delimiter.parenthesis", foreground: "7dcfff" },
-      { token: "tag", foreground: "f7768e" },
+      { token: "", foreground: "b8b8b8" },
+      { token: "keyword", foreground: "c586c0" },
+      { token: "keyword.control", foreground: "c586c0" },
+      { token: "keyword.builtin", foreground: "4fc1ff" },
+      { token: "keyword.constant", foreground: "569cd6" },
+      { token: "keyword.predefined", foreground: "9cdcfe" },
+      { token: "keyword.magic", foreground: "dcdcaa" },
+      { token: "function.call", foreground: "dcdcaa" },
+      { token: "function.definition", foreground: "dcdcaa" },
+      { token: "type.class", foreground: "4ec9b0" },
+      { token: "identifier", foreground: "b8b8b8" },
+      { token: "variable", foreground: "9cdcfe" },
+      { token: "property", foreground: "9cdcfe" },
+      { token: "string", foreground: "ce9178" },
+      { token: "string.escape", foreground: "d7ba7d" },
+      { token: "comment", foreground: "6a9955", fontStyle: "italic" },
+      { token: "number", foreground: "b5cea8" },
+      { token: "number.hex", foreground: "b5cea8" },
+      { token: "operator", foreground: "d4d4d4" },
+      { token: "delimiter", foreground: "808890" },
+      { token: "delimiter.curly", foreground: "d7ba7d" },
+      { token: "delimiter.bracket", foreground: "dcdcaa" },
+      { token: "delimiter.parenthesis", foreground: "9cdcfe" },
+      { token: "tag", foreground: "c586c0" },
     ],
     colors: {
-      "editor.background": "#1a1b26",
-      "editor.foreground": "#c0caf5",
-      "editorLineNumber.foreground": "#3b4261",
-      "editorLineNumber.activeForeground": "#7aa2f7",
-      "editor.lineHighlightBackground": "#202330",
-      "editorCursor.foreground": "#c0caf5",
-      "editor.selectionBackground": "#33467c",
-      "editor.inactiveSelectionBackground": "#29345b",
-      "editorIndentGuide.background1": "#292e42",
-      "editorIndentGuide.activeBackground1": "#3b4261",
-      "editorBracketMatch.background": "#33467c",
-      "editorBracketMatch.border": "#7dcfff",
+      "editor.background": "#141414",
+      "editor.foreground": "#b8b8b8",
+      "editorLineNumber.foreground": "#555555",
+      "editorLineNumber.activeForeground": "#5b9bd5",
+      "editor.lineHighlightBackground": "#1f1f1f",
+      "editorCursor.foreground": "#ffffff",
+      "editor.selectionBackground": "#264f78",
     }
   };
 
+  // Monaco's tokenizer only controls syntax colors. Editing behavior such as
+  // quote pairing and Python indentation comes from the language configuration.
+  const pythonLanguageConfiguration: Monaco.languages.LanguageConfiguration = {
+    comments: {
+      lineComment: "#",
+      blockComment: ["'''", "'''"]
+    },
+    brackets: [
+      ["{", "}"],
+      ["[", "]"],
+      ["(", ")"]
+    ],
+    autoClosingPairs: [
+      { open: "{", close: "}" },
+      { open: "[", close: "]" },
+      { open: "(", close: ")" },
+      { open: '"', close: '"', notIn: ["string"] },
+      { open: "'", close: "'", notIn: ["string", "comment"] }
+    ],
+    surroundingPairs: [
+      { open: "{", close: "}" },
+      { open: "[", close: "]" },
+      { open: "(", close: ")" },
+      { open: '"', close: '"' },
+      { open: "'", close: "'" }
+    ],
+    autoCloseBefore: ";:.,=}])> \n\t",
+    indentationRules: {
+      increaseIndentPattern: /^\s*(?:def|class|for|if|elif|else|while|try|with|finally|except|async|match|case)\b.*:\s*(?:#.*)?$/,
+      decreaseIndentPattern: /^\s*(?:elif|else|except|finally)\b.*:?\s*(?:#.*)?$/
+    },
+    folding: {
+      offSide: true,
+      markers: {
+        start: /^\s*#region\b/,
+        end: /^\s*#endregion\b/
+      }
+    }
+  };
+
+  function flushCodeSync() {
+    if (codeSyncFrame !== null) {
+      cancelAnimationFrame(codeSyncFrame);
+      codeSyncFrame = null;
+    }
+    if (!editor || isDestroyed) return;
+    isUpdatingFromInside = true;
+    code = editor.getValue();
+    isUpdatingFromInside = false;
+  }
+
+  function scheduleCodeSync() {
+    if (codeSyncFrame !== null) return;
+    codeSyncFrame = requestAnimationFrame(() => {
+      codeSyncFrame = null;
+      flushCodeSync();
+    });
+  }
+
   const commandCues: Record<string, { label: string; tone: TypingCue["tone"] }> = {
     def: { label: "function", tone: "keyword" },
-    class: { label: "type", tone: "keyword" },
+    class: { label: "type", tone: "type" },
     if: { label: "branch", tone: "keyword" },
     elif: { label: "branch", tone: "keyword" },
     else: { label: "branch", tone: "keyword" },
@@ -318,19 +383,23 @@
     str: { label: "cast", tone: "builtin" },
   };
 
-  function showTypingCue(value: string, position: Monaco.Position) {
+  function showTypingCue(position: Monaco.Position) {
     if (!appState.isPowerModeActive || !editor) return;
-    const line = value.split(/\r?\n/)[position.lineNumber - 1]?.slice(0, position.column - 1) ?? "";
+
+    const line = editor.getModel()?.getLineContent(position.lineNumber)?.slice(0, position.column - 1) ?? "";
     const word = line.match(/([A-Za-z_]\w*)$/)?.[1];
     if (!word) return;
 
     const cue = commandCues[word];
     const functionName = line.match(/\bdef\s+([A-Za-z_]\w*)$/)?.[1];
-    const resolved = cue ?? (functionName === word ? { label: "function", tone: "function" as const } : null);
+    const resolved = cue ?? (functionName === word
+      ? { label: "function", tone: "function" as const }
+      : null);
     if (!resolved) return;
 
     const coordinates = editor.getScrolledVisiblePosition(position);
     if (!coordinates) return;
+
     typingCue = {
       ...resolved,
       x: coordinates.left + 4,
@@ -366,6 +435,18 @@
       }
 
       // Register custom python tokenizer & theme
+      if (!monacoModule.languages.getLanguages().some(({ id }) => id === "python")) {
+        monacoModule.languages.register({ id: "python" });
+      }
+      monacoModule.languages.setLanguageConfiguration("python", {
+        ...pythonLanguageConfiguration,
+        onEnterRules: [
+          {
+            beforeText: /^\s*(?:def|class|for|if|elif|else|while|try|with|finally|except|async|match|case).*?:\s*$/,
+            action: { indentAction: monacoModule.languages.IndentAction.Indent }
+          }
+        ]
+      });
       monacoModule.languages.setMonarchTokensProvider("python", customPythonTokenizer);
       monacoModule.editor.defineTheme("practice-range-theme", practiceRangeTheme);
 
@@ -373,45 +454,47 @@
         value: code,
         language: "python",
         theme: "practice-range-theme",
+        autoDetectHighContrast: false,
+        "semanticHighlighting.enabled": false,
         automaticLayout: true,
         tabSize: 4,
         insertSpaces: true,
+        detectIndentation: false,
+        autoIndent: "full",
+        autoClosingBrackets: "always",
+        autoClosingQuotes: "always",
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
         lineNumbers: "on",
         lineNumbersMinChars: 3,
+        lineDecorationsWidth: 4,
+        glyphMargin: false,
         fontSize: 14,
-        lineHeight: 22,
         fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
-        padding: { top: 14, bottom: 14 },
-        cursorBlinking: "smooth",
-        cursorSmoothCaretAnimation: "on",
-        smoothScrolling: true,
-        renderLineHighlight: "all",
-        renderWhitespace: "selection",
-        bracketPairColorization: { enabled: true },
-        guides: { bracketPairs: "active", indentation: true, highlightActiveIndentation: true },
-        autoIndent: "full",
-        tabCompletion: "on",
-        useTabStops: true,
+        padding: { top: 8, bottom: 8 },
+        cursorBlinking: "blink",
+        cursorSmoothCaretAnimation: "off",
+        smoothScrolling: false,
       });
+      // Apply the theme after the instance exists. Some Monaco runtimes do not
+      // initialize the standalone theme service until editor.create() runs.
+      monacoModule.editor.setTheme("practice-range-theme");
 
-      editor.addCommand(monacoModule.KeyMod.CtrlCmd | monacoModule.KeyCode.Enter, () => onRun());
+      editor.addCommand(monacoModule.KeyMod.CtrlCmd | monacoModule.KeyCode.Enter, () => {
+        flushCodeSync();
+        onRun();
+      });
 
       editor.onDidChangeModelContent((event) => {
         if (editor) {
-          isUpdatingFromInside = true;
-          code = editor.getValue();
-          isUpdatingFromInside = false;
+          scheduleCodeSync();
 
-          // Trigger typing sparkles if Power Mode is active and it's a typing action
           if (appState.isPowerModeActive && event.changes.length > 0) {
             const position = editor.getPosition();
             if (position) {
-              showTypingCue(editor.getValue(), position);
+              showTypingCue(position);
               const coordinates = editor.getScrolledVisiblePosition(position);
               if (coordinates) {
-                // coordinates.height represents the height of the cursor/line
                 spawnParticles(coordinates.left, coordinates.top + (coordinates.height || 18));
               }
             }
@@ -453,6 +536,9 @@
     if (animationId) {
       cancelAnimationFrame(animationId);
     }
+    if (codeSyncFrame !== null) {
+      cancelAnimationFrame(codeSyncFrame);
+    }
     if (typingCueTimer) {
       window.clearTimeout(typingCueTimer);
     }
@@ -463,14 +549,14 @@
   <div class="editor-container" bind:this={containerEl}></div>
   <canvas bind:this={canvasEl} class="editor-canvas-cyber"></canvas>
   {#if typingCue}
-    <div
-      class="typing-cue typing-cue-{typingCue.tone}"
-      style={`--cue-x: ${typingCue.x}px; --cue-y: ${typingCue.y}px;`}
-      aria-live="polite"
-    >
-      <span class="typing-cue-glyph">✦</span>
-      <span>{typingCue.label}</span>
-    </div>
+      <div
+        class="typing-cue typing-cue-{typingCue.tone}"
+        style={`--cue-x: ${typingCue.x}px; --cue-y: ${typingCue.y}px;`}
+        aria-live="polite"
+      >
+        <span class="typing-cue-glyph">✦</span>
+        <span>{typingCue.label}</span>
+      </div>
   {/if}
 </div>
 
@@ -480,6 +566,50 @@
     height: 100%;
     min-height: 200px;
     overflow: hidden;
-    background-color: #1a1b26;
+    background-color: #141414;
   }
+
+  .typing-cue {
+    position: absolute;
+    left: var(--cue-x);
+    top: var(--cue-y);
+    z-index: 12;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 7px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    color: #7aa2f7;
+    background: #202330;
+    box-shadow: 0 4px 12px rgba(10, 12, 20, 0.32);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
+    pointer-events: none;
+    transform: translate(0, -115%);
+    animation: typing-cue-in 0.22s var(--ease-out-quart), typing-cue-out 0.9s ease-out forwards;
+  }
+
+  .typing-cue-glyph {
+    color: currentColor;
+    font-size: 11px;
+  }
+
+  .typing-cue-keyword { color: #bb9af7; }
+  .typing-cue-builtin { color: #2ac3de; }
+  .typing-cue-function { color: #7aa2f7; }
+  .typing-cue-constant { color: #ff9e64; }
+  .typing-cue-type { color: #73daca; }
+
+  @keyframes typing-cue-in {
+    from { opacity: 0; transform: translate(0, -85%) scale(0.94); }
+    to { opacity: 1; transform: translate(0, -115%) scale(1); }
+  }
+
+  @keyframes typing-cue-out {
+    0%, 65% { opacity: 1; }
+    100% { opacity: 0; transform: translate(0, -135%); }
+  }
+
 </style>
